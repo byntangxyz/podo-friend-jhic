@@ -1,85 +1,156 @@
 <script setup lang="ts">
+definePageMeta({
+  layout: 'dashboard',
+});
+
 useHead({
   title: 'Dashboard Belajar',
-})
+});
 
-const authStore = useAuthStore()
-const router = useRouter()
-const isLoggingOut = ref(false)
+const authStore = useAuthStore();
+const surveyStore = useSurveyStore();
+const gamificationStore = useGamificationStore();
 
-const handleLogout = async () => {
-  isLoggingOut.value = true
-  try {
-    await authStore.logout()
-    router.push('/login')
-  } finally {
-    isLoggingOut.value = false
+// Cek status survey harian & ambil statistik saat halaman dimuat
+onMounted(async () => {
+  await Promise.all([
+    surveyStore.fetchTodaySurvey(),
+    gamificationStore.fetchStats(),
+  ]);
+});
+
+const moodBadgeInfo = computed(() => {
+  const m = surveyStore.todaySurvey?.mood;
+  switch (m) {
+    case 'Energetic':
+      return {
+        icon: 'lucide:zap',
+        color: 'text-amber-600 bg-amber-100 border-amber-300',
+      };
+    case 'Balanced':
+      return {
+        icon: 'lucide:scale',
+        color: 'text-emerald-600 bg-emerald-100 border-emerald-300',
+      };
+    case 'Tired':
+      return {
+        icon: 'lucide:battery-low',
+        color: 'text-orange-600 bg-orange-100 border-orange-300',
+      };
+    case 'Overwhelmed':
+      return {
+        icon: 'lucide:cloud-lightning',
+        color: 'text-rose-600 bg-rose-100 border-rose-300',
+      };
+    case 'Distracted':
+      return {
+        icon: 'lucide:compass',
+        color: 'text-sky-600 bg-sky-100 border-sky-300',
+      };
+    default:
+      return null;
   }
-}
+});
 </script>
 
 <template>
-  <div class="flex-1 max-w-4xl mx-auto w-full px-4 py-8 sm:py-12">
-    <!-- Welcome Header Card -->
-    <BaseCard variant="white" padding="lg">
-      <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
-        <!-- Mascot -->
-        <div class="p-3 bg-orange-100 rounded-3xl shrink-0">
-          <AppMascot size="lg" />
-        </div>
-
-        <!-- User Information -->
-        <div class="flex-1">
-          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold mb-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Sesi Autentikasi Aktif (Phase 1)</span>
-          </div>
-
-          <h1 class="text-2xl sm:text-4xl font-black text-stone-900">
-            Halo, <span class="text-orange-500">{{ authStore.user?.name || 'Teman Belajar' }}</span>!
-          </h1>
-          <p class="text-sm text-stone-600 mt-1">
-            Akun terhubung: <span class="font-semibold text-stone-800">{{ authStore.user?.email }}</span>
-          </p>
-
-          <div class="mt-6 flex flex-wrap gap-3 justify-center sm:justify-start">
-            <BaseButton
-              variant="outline"
-              size="sm"
-              :loading="isLoggingOut"
-              @click="handleLogout"
-            >
-              Keluar (Logout)
-            </BaseButton>
-          </div>
-        </div>
+  <div class="relative w-full flex flex-col gap-6 overflow-x-clip xl:pr-[280px] 2xl:pr-[360px]">
+    <!-- Right-side Decorative Mascot Bar (Figma Frame 44:667) -->
+    <!-- Higher z-index (z-30) to overlay elements below, clickable to navigate to /chat in Phase 3 -->
+    <NuxtLink
+      to="/chat"
+      class="fixed right-0 top-20 bottom-0 w-[240px] xl:w-[320px] 2xl:w-[354px] z-30 hidden xl:flex items-center justify-end overflow-visible select-none group cursor-pointer transition-transform hover:scale-[1.02] active:scale-95"
+      title="Ngobrol dengan Podo AI Companion (Phase 3)"
+    >
+      <!-- Hover prompt bubble -->
+      <div
+        class="absolute right-48 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-stone-900/90 text-white text-xs font-extrabold px-3.5 py-2 rounded-2xl shadow-lg pointer-events-none whitespace-nowrap flex items-center gap-1.5"
+      >
+        <Icon name="lucide:message-circle" class="w-3.5 h-3.5 text-orange-400" />
+        <span>Tanya Podo AI (Phase 3)</span>
       </div>
-    </BaseCard>
 
-    <!-- Phase 1 Success Summary -->
-    <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-5">
-      <BaseCard variant="cream" padding="md">
-        <h2 class="text-base font-extrabold text-stone-900 mb-2 flex items-center gap-2">
-          <span>🛡️</span>
-          <span>Status Keamanan &amp; Sesi</span>
-        </h2>
-        <p class="text-xs text-stone-600 leading-relaxed mb-3">
-          State autentikasi tersimpan aman di Pinia store dengan token Sanctum Bearer yang siap digunakan untuk seluruh request API di fase berikutnya.
-        </p>
-        <div class="p-2.5 rounded-xl bg-white/80 border border-orange-200 text-xs font-mono text-stone-500 break-all">
-          Token: {{ authStore.token ? authStore.token.substring(0, 24) + '...' : 'Tidak ada token' }}
+      <img
+        src="/pomodoro_right_bar.svg"
+        alt="Podo Mascot Background"
+        class="h-full max-h-[95vh] object-contain object-right drop-shadow-md transition-all group-hover:brightness-105"
+      />
+    </NuxtLink>
+
+    <!-- Top Welcome & Mood Status Header -->
+    <div
+      class="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white/80 backdrop-blur-xs p-4 sm:p-6 rounded-3xl border border-orange-200 shadow-xs"
+    >
+      <div>
+        <div
+          class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold mb-2"
+        >
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span>Sesi Aktif • Selamat Belajar</span>
         </div>
-      </BaseCard>
-
-      <BaseCard variant="cream" padding="md">
-        <h2 class="text-base font-extrabold text-stone-900 mb-2 flex items-center gap-2">
-          <span>🚀</span>
-          <span>Persiapan Phase Selanjutnya</span>
-        </h2>
-        <p class="text-xs text-stone-600 leading-relaxed">
-          Fondasi sistem siap untuk pengembangan modul <strong>Mood Survey</strong> harian, <strong>Pomodoro Timer</strong> presisi, dan integrasi <strong>LangChain AI Companion</strong>.
+        <h1 class="text-2xl sm:text-3xl font-black text-stone-900">
+          Semangat Fokus,
+          <span class="text-orange-500">{{
+            authStore.user?.name || 'Teman Belajar'
+          }}</span
+          >!
+        </h1>
+        <p class="text-xs sm:text-sm text-stone-600 mt-1">
+          Karakter AI dan ritme Pomodoro siap mendampingi belajarmu hari ini.
         </p>
-      </BaseCard>
+      </div>
+
+      <!-- Today's Mood Widget -->
+      <div class="flex items-center gap-3">
+        <div
+          v-if="surveyStore.todaySurvey"
+          class="flex items-center gap-2.5 px-4 py-2 rounded-2xl border"
+          :class="
+            moodBadgeInfo?.color ||
+            'bg-orange-100 text-orange-800 border-orange-200'
+          "
+        >
+          <Icon
+            v-if="moodBadgeInfo"
+            :name="moodBadgeInfo.icon"
+            class="w-5 h-5 shrink-0"
+          />
+          <div>
+            <span class="text-[11px] block font-medium opacity-80"
+              >Mood Hari Ini:</span
+            >
+            <span class="text-xs font-black">{{
+              surveyStore.todaySurvey.mood
+            }}</span>
+          </div>
+          <button
+            type="button"
+            class="ml-2 text-xs font-bold underline hover:opacity-75 cursor-pointer"
+            title="Ubah Mood"
+            @click="surveyStore.openModal"
+          >
+            Ubah
+          </button>
+        </div>
+
+        <button
+          v-else
+          type="button"
+          class="px-4 py-2 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-extrabold text-xs flex items-center gap-2 shadow-sm transition-transform hover:scale-105 cursor-pointer"
+          @click="surveyStore.openModal"
+        >
+          <Icon name="lucide:smile" class="w-4 h-4" />
+          <span>Isi Mood Hari Ini</span>
+        </button>
+      </div>
     </div>
+
+    <!-- Pomodoro Timer Interactive Stage (Faithfully replicating Figma Frame 44:667) -->
+    <div class="relative z-10">
+      <PomodoroTimer />
+    </div>
+
+    <!-- Mandatory Mood Survey Modal (Shows when todaySurvey is null) -->
+    <MoodSurveyModal />
   </div>
 </template>

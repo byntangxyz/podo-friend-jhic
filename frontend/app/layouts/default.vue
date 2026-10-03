@@ -45,6 +45,12 @@ const handleLogout = async () => {
           </template>
           <template v-else>
             <NuxtLink
+              to="/timer"
+              class="text-sm font-semibold text-stone-700 hover:text-orange-600 px-3 py-1.5 rounded-xl hover:bg-orange-100/50 transition-colors"
+            >
+              Coba Timer
+            </NuxtLink>
+            <NuxtLink
               to="/login"
               class="text-sm font-bold text-stone-700 hover:text-orange-600 px-3.5 py-1.5 rounded-xl hover:bg-orange-100/50 transition-colors"
             >

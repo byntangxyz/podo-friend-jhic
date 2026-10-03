@@ -11,8 +11,10 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@nuxt/icon": "^2.5.1",
     "@pinia-plugin-persistedstate/nuxt": "^1.2.1",
     "@pinia/nuxt": "^1.0.2",
+    "@vueuse/core": "^15.0.0",
     "nuxt": "^4.5.2",
     "pinia": "^4.0.3",
     "vue": "^3.5.43",

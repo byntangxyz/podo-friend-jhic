@@ -1,7 +1,7 @@
 export default defineNuxtRouteMiddleware((to) => {
   const authStore = useAuthStore()
 
-  const publicRoutes = ['/', '/login', '/register']
+  const publicRoutes = ['/', '/login', '/register', '/timer']
   const isPublicRoute = publicRoutes.includes(to.path)
 
   // 1. Pengguna tidak memiliki token dan mencoba mengakses rute terproteksi
