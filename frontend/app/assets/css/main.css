@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-orange-50 text-stone-900 min-h-screen font-sans antialiased;
+  }
+}

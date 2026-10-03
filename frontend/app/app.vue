@@ -1,6 +1,16 @@
+<script setup lang="ts">
+useHead({
+  titleTemplate: (titleChunk) => {
+    return titleChunk ? `${titleChunk} - PodoFriend` : 'PodoFriend - Anti-Burnout Focus & Study Companion'
+  },
+  bodyAttrs: {
+    class: 'bg-orange-50 text-stone-900 min-h-screen font-sans',
+  },
+})
+</script>
+
 <template>
-  <div>
-    <NuxtRouteAnnouncer />
-    <NuxtWelcome />
-  </div>
+  <NuxtLayout>
+    <NuxtPage />
+  </NuxtLayout>
 </template>
