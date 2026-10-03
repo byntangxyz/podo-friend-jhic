@@ -36,7 +36,7 @@ class SessionController extends Controller
     {
         $session = PomodoroSession::find($id);
 
-        if (!$session) {
+        if (! $session) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Session not found',
@@ -60,9 +60,15 @@ class SessionController extends Controller
             ], 400);
         }
 
-        $endTime = Carbon::now();
         $startTime = Carbon::parse($session->start_time);
-        $durationMinutes = max(0, (int) $startTime->diffInMinutes($endTime));
+        $endTime = Carbon::now();
+        $durationInSeconds = (int) $startTime->diffInSeconds($endTime);
+
+        if ($durationInSeconds > 0) {
+            $durationMinutes = (int) max(1, ceil($durationInSeconds / 60));
+        } else {
+            $durationMinutes = 0;
+        }
 
         $session->update([
             'end_time' => $endTime,

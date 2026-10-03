@@ -13,6 +13,12 @@ class SessionTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+        parent::tearDown();
+    }
+
     public function test_unauthenticated_user_cannot_access_session_endpoints(): void
     {
         $this->postJson('/api/sessions')->assertStatus(401);
@@ -53,7 +59,9 @@ class SessionTest extends TestCase
     public function test_user_can_complete_pomodoro_session(): void
     {
         $user = User::factory()->create();
-        $startTime = Carbon::now()->subMinutes(25);
+        $now = Carbon::now();
+        Carbon::setTestNow($now);
+        $startTime = $now->copy()->subMinutes(25);
 
         $session = PomodoroSession::create([
             'user_id' => $user->id,
@@ -141,16 +149,19 @@ class SessionTest extends TestCase
     public function test_streak_same_day_session_does_not_increment(): void
     {
         $user = User::factory()->create();
+        $now = Carbon::now();
+        Carbon::setTestNow($now);
+
         GamificationStat::create([
             'user_id' => $user->id,
             'current_streak' => 3,
             'total_focus_time' => 100,
-            'last_active_date' => Carbon::now()->subHours(2),
+            'last_active_date' => $now->copy()->subHours(2),
         ]);
 
         $session = PomodoroSession::create([
             'user_id' => $user->id,
-            'start_time' => Carbon::now()->subMinutes(30),
+            'start_time' => $now->copy()->subMinutes(30),
         ]);
 
         $response = $this->actingAs($user, 'sanctum')
@@ -164,16 +175,19 @@ class SessionTest extends TestCase
     public function test_streak_consecutive_day_increments(): void
     {
         $user = User::factory()->create();
+        $now = Carbon::now();
+        Carbon::setTestNow($now);
+
         GamificationStat::create([
             'user_id' => $user->id,
             'current_streak' => 2,
             'total_focus_time' => 50,
-            'last_active_date' => Carbon::now()->subDay(),
+            'last_active_date' => $now->copy()->subDay(),
         ]);
 
         $session = PomodoroSession::create([
             'user_id' => $user->id,
-            'start_time' => Carbon::now()->subMinutes(25),
+            'start_time' => $now->copy()->subMinutes(25),
         ]);
 
         $response = $this->actingAs($user, 'sanctum')
@@ -187,17 +201,20 @@ class SessionTest extends TestCase
     public function test_streak_grace_day_tolerance(): void
     {
         $user = User::factory()->create();
+        $now = Carbon::now();
+        Carbon::setTestNow($now);
+
         // Last active 2 days ago (missed 1 day: grace day)
         GamificationStat::create([
             'user_id' => $user->id,
             'current_streak' => 4,
             'total_focus_time' => 120,
-            'last_active_date' => Carbon::now()->subDays(2),
+            'last_active_date' => $now->copy()->subDays(2),
         ]);
 
         $session = PomodoroSession::create([
             'user_id' => $user->id,
-            'start_time' => Carbon::now()->subMinutes(20),
+            'start_time' => $now->copy()->subMinutes(20),
         ]);
 
         $response = $this->actingAs($user, 'sanctum')
@@ -211,17 +228,20 @@ class SessionTest extends TestCase
     public function test_streak_resets_after_grace_period(): void
     {
         $user = User::factory()->create();
+        $now = Carbon::now();
+        Carbon::setTestNow($now);
+
         // Last active 3 days ago (missed > 1 day: beyond grace day)
         GamificationStat::create([
             'user_id' => $user->id,
             'current_streak' => 7,
             'total_focus_time' => 300,
-            'last_active_date' => Carbon::now()->subDays(3),
+            'last_active_date' => $now->copy()->subDays(3),
         ]);
 
         $session = PomodoroSession::create([
             'user_id' => $user->id,
-            'start_time' => Carbon::now()->subMinutes(25),
+            'start_time' => $now->copy()->subMinutes(25),
         ]);
 
         $response = $this->actingAs($user, 'sanctum')
@@ -230,5 +250,74 @@ class SessionTest extends TestCase
         $response->assertStatus(200)
             ->assertJsonPath('data.gamification_stat.current_streak', 1)
             ->assertJsonPath('data.gamification_stat.total_focus_time', 325);
+    }
+
+    public function test_completing_short_session_rounds_up_to_at_least_one_minute(): void
+    {
+        $user = User::factory()->create();
+        $now = Carbon::now();
+        Carbon::setTestNow($now);
+        $startTime = $now->copy()->subSeconds(32);
+
+        $session = PomodoroSession::create([
+            'user_id' => $user->id,
+            'start_time' => $startTime,
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->putJson("/api/sessions/{$session->id}");
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.session.duration_minutes', 1)
+            ->assertJsonPath('data.gamification_stat.total_focus_time', 1);
+
+        $this->assertDatabaseHas('pomodoro_sessions', [
+            'id' => $session->id,
+            'duration_minutes' => 1,
+        ]);
+
+        $this->assertDatabaseHas('gamification_stats', [
+            'user_id' => $user->id,
+            'total_focus_time' => 1,
+        ]);
+    }
+
+    public function test_completing_zero_second_session_records_zero_duration(): void
+    {
+        $user = User::factory()->create();
+        $now = Carbon::now();
+        Carbon::setTestNow($now);
+
+        $session = PomodoroSession::create([
+            'user_id' => $user->id,
+            'start_time' => $now,
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->putJson("/api/sessions/{$session->id}");
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.session.duration_minutes', 0)
+            ->assertJsonPath('data.gamification_stat.total_focus_time', 0);
+    }
+
+    public function test_completing_session_with_partial_minute_rounds_up(): void
+    {
+        $user = User::factory()->create();
+        $now = Carbon::now();
+        Carbon::setTestNow($now);
+        $startTime = $now->copy()->subSeconds(65);
+
+        $session = PomodoroSession::create([
+            'user_id' => $user->id,
+            'start_time' => $startTime,
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->putJson("/api/sessions/{$session->id}");
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.session.duration_minutes', 2)
+            ->assertJsonPath('data.gamification_stat.total_focus_time', 2);
     }
 }
