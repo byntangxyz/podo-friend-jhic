@@ -24,6 +24,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@iconify-json/lucide": "^1.2.139",
     "@nuxtjs/tailwindcss": "^6.14.0",
     "@types/node": "^26.6.4",
     "typescript": "^5.9.3",

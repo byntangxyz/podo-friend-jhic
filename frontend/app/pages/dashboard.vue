@@ -10,6 +10,7 @@ useHead({
 const authStore = useAuthStore();
 const surveyStore = useSurveyStore();
 const gamificationStore = useGamificationStore();
+const timerStore = useTimerStore();
 
 // Cek status survey harian & ambil statistik saat halaman dimuat
 onMounted(async () => {
@@ -51,6 +52,23 @@ const moodBadgeInfo = computed(() => {
       return null;
   }
 });
+const moodDisplayLabel = computed(() => {
+  const m = surveyStore.todaySurvey?.mood;
+  switch (m) {
+    case 'Energetic':
+      return 'Sangat Fokus';
+    case 'Distracted':
+      return 'Kurang Fokus';
+    case 'Tired':
+      return 'Lelah';
+    case 'Overwhelmed':
+      return 'Kewalahan';
+    case 'Balanced':
+      return 'Stabil & Santai';
+    default:
+      return m || 'Belum Ada';
+  }
+});
 </script>
 
 <template>
@@ -60,14 +78,14 @@ const moodBadgeInfo = computed(() => {
     <NuxtLink
       to="/chatbot"
       class="fixed right-0 top-20 bottom-0 w-[240px] xl:w-[320px] 2xl:w-[354px] z-30 hidden xl:flex items-center justify-end overflow-visible select-none group cursor-pointer transition-transform hover:scale-[1.02] active:scale-95"
-      title="Ngobrol dengan Podo AI Companion (Phase 3)"
+      title="Ngobrol dengan Podo AI Companion"
     >
       <!-- Hover prompt bubble -->
       <div
         class="absolute right-48 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-stone-900/90 text-white text-xs font-extrabold px-3.5 py-2 rounded-2xl shadow-lg pointer-events-none whitespace-nowrap flex items-center gap-1.5"
       >
         <Icon name="lucide:message-circle" class="w-3.5 h-3.5 text-orange-400" />
-        <span>Tanya Podo AI (Phase 3)</span>
+        <span>Tanya Podo AI</span>
       </div>
 
       <img
@@ -77,80 +95,78 @@ const moodBadgeInfo = computed(() => {
       />
     </NuxtLink>
 
-    <!-- Top Welcome & Mood Status Header -->
-    <div
-      class="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white/80 backdrop-blur-xs p-4 sm:p-6 rounded-3xl border border-orange-200 shadow-xs"
-    >
-      <div>
-        <div
-          class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold mb-2"
-        >
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>Sesi Aktif • Selamat Belajar</span>
-        </div>
-        <h1 class="text-2xl sm:text-3xl font-black text-stone-900">
-          Semangat Fokus,
-          <span class="text-orange-500">{{
-            authStore.user?.name || 'Teman Belajar'
-          }}</span
-          >!
-        </h1>
-        <p class="text-xs sm:text-sm text-stone-600 mt-1">
-          Karakter AI dan ritme Pomodoro siap mendampingi belajarmu hari ini.
-        </p>
-      </div>
-
-      <!-- Today's Mood Widget -->
-      <div class="flex items-center gap-3">
-        <div
-          v-if="surveyStore.todaySurvey"
-          class="flex items-center gap-2.5 px-4 py-2 rounded-2xl border"
-          :class="
-            moodBadgeInfo?.color ||
-            'bg-orange-100 text-orange-800 border-orange-200'
-          "
-        >
-          <Icon
-            v-if="moodBadgeInfo"
-            :name="moodBadgeInfo.icon"
-            class="w-5 h-5 shrink-0"
-          />
-          <div>
-            <span class="text-[11px] block font-medium opacity-80"
-              >Mood Hari Ini:</span
-            >
-            <span class="text-xs font-black">{{
-              surveyStore.todaySurvey.mood
-            }}</span>
-          </div>
-          <button
-            type="button"
-            class="ml-2 text-xs font-bold underline hover:opacity-75 cursor-pointer"
-            title="Ubah Mood"
-            @click="surveyStore.openModal"
-          >
-            Ubah
-          </button>
-        </div>
-
-        <button
-          v-else
-          type="button"
-          class="px-4 py-2 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-extrabold text-xs flex items-center gap-2 shadow-sm transition-transform hover:scale-105 cursor-pointer"
-          @click="surveyStore.openModal"
-        >
-          <Icon name="lucide:smile" class="w-4 h-4" />
-          <span>Isi Mood Hari Ini</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Main Desktop Side-by-Side: TaskList (Left) & PomodoroTimer (Center/Right) -->
+    <!-- Main Desktop Side-by-Side: TaskList (Left) & PomodoroTimer Column (Center/Right) -->
     <div class="w-full flex flex-col lg:flex-row items-start justify-start gap-6 lg:gap-8 relative z-10">
+      <!-- Left Column: Task List Sidebar -->
       <div class="w-full lg:w-80 shrink-0">
         <TaskList />
       </div>
-      <div class="flex-1 w-full max-w-4xl">
+
+      <!-- Center Column: Welcome Header & PomodoroTimer (Sejajar dan Simetris) -->
+      <div class="flex-1 w-full max-w-4xl flex flex-col gap-6 items-center">
+        <!-- Top Welcome & Mood Status Header -->
+        <div
+          class="w-full relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white/80 backdrop-blur-xs p-4 sm:p-6 rounded-3xl border border-orange-200 shadow-xs"
+        >
+          <div>
+            <h1 class="text-2xl sm:text-3xl font-black text-stone-900">
+              Yuk belajar,
+              <span class="text-orange-500">{{
+                authStore.user?.name || 'Teman Belajar'
+              }}</span
+              >
+            </h1>
+            <p class="text-xs sm:text-sm text-stone-600 mt-1">
+              Podo selalu ada buat kamu.
+            </p>
+          </div>
+
+          <!-- Preferensi Belajar Widget (Sederhana & Bersih) -->
+          <div class="flex items-center gap-2.5">
+            <div
+              v-if="surveyStore.todaySurvey"
+              class="flex items-center gap-3 px-3.5 py-2 rounded-2xl bg-white border border-stone-200/90 shadow-2xs text-left"
+            >
+              <div class="w-8 h-8 rounded-xl bg-orange-100 flex items-center justify-center shrink-0 text-orange-600">
+                <Icon name="lucide:sliders-horizontal" class="w-4 h-4" />
+              </div>
+              <div class="flex flex-col">
+                <span class="text-[10px] font-bold text-stone-400 uppercase tracking-wider leading-none">
+                  Preferensi Belajar
+                </span>
+                <div class="flex items-center gap-1.5 mt-1">
+                  <span class="text-xs font-black text-stone-800">
+                    {{ timerStore.currentStudyConfig.label }} ({{ timerStore.currentStudyConfig.focusMinutes }}m)
+                  </span>
+                  <span class="text-[10px] font-bold text-stone-400">•</span>
+                  <span class="text-xs font-semibold text-stone-600">
+                    {{ moodDisplayLabel }}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                class="ml-1.5 px-2.5 py-1 rounded-lg text-xs font-extrabold text-orange-600 hover:bg-orange-50 transition-colors cursor-pointer"
+                title="Ganti Preferensi Belajar"
+                @click="surveyStore.openModal"
+              >
+                Ganti
+              </button>
+            </div>
+
+            <button
+              v-else
+              type="button"
+              class="px-4 py-2 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-extrabold text-xs flex items-center gap-2 shadow-sm transition-transform hover:scale-105 cursor-pointer"
+              @click="surveyStore.openModal"
+            >
+              <Icon name="lucide:sliders-horizontal" class="w-4 h-4" />
+              <span>Atur Preferensi Belajar</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Pomodoro Timer Stage -->
         <PomodoroTimer />
       </div>
     </div>

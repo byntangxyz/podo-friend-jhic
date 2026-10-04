@@ -165,16 +165,17 @@ const moodBadgeInfo = computed(() => {
       class="flex-1 flex flex-col items-center justify-center max-w-5xl mx-auto px-4 py-8 sm:py-12 w-full"
     >
       <!-- Title Tagline -->
-      <div class="text-center mb-6">
-        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-100 text-orange-700 text-xs font-bold mb-3 tracking-wide uppercase shadow-2xs">
-          <span>✨ Anti-Burnout Focus &amp; Study Companion</span>
-        </div>
+      <div class="text-center">
         <h1 class="text-2xl sm:text-4xl md:text-5xl font-black text-stone-900 tracking-tight">
-          Mulai Fokus Belajar dengan <span class="text-orange-500">Podo</span>
+          Mulai fokus belajar dengan <span class="text-orange-500">Podo</span>
         </h1>
-        <p class="text-xs sm:text-sm text-stone-600 mt-2 max-w-xl mx-auto">
-          Atur interval belajarmu sekarang. Coba sesi Pomodoro langsung di bawah ini tanpa hambatan!
-        </p>
+        <p class="text-[15px] font-semibold mt-4">Yuk, belajar bareng Podo! Fokus sebentar, istirahat sejenak. Podo bantu ingetin kamu buat belajar lebih teratur.</p>
+        <AppMascot
+        size="custom"
+        custom-class="w-42 h-42 sm:w-42 sm:h-42"
+        animation="excited"
+        />
+        
       </div>
 
       <!-- Centered Pomodoro Timer -->

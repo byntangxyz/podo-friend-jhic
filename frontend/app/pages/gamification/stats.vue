@@ -64,7 +64,7 @@ const leaderboardItems = computed(() => gamificationStore.dailyLeaderboard)
             {{ authStore.user?.name || 'Pelajar Podo' }}
           </h1>
           <p class="text-xs sm:text-sm text-stone-500 mt-0.5">
-            {{ authStore.user?.email }} • Terdaftar di PodoFriend
+            {{ authStore.user?.email }}
           </p>
         </div>
       </div>
@@ -120,8 +120,8 @@ const leaderboardItems = computed(() => gamificationStore.dailyLeaderboard)
             dengan Streak <span class="text-orange-500">{{ streak }} Hari!</span>
           </p>
           <p class="text-sm text-stone-600 mt-3 max-w-xl">
-            Konsistensi adalah kunci penguasaan materi. Kamu telah mengumpulkan total
-            <strong class="text-stone-900">{{ focusTime }}</strong> fokus belajar berkualitas.
+            Luar biasa! Konsistensi belajarmu sangat baik. Kamu sudah mengumpulkan total
+            <strong class="text-stone-900">{{ focusTime }}</strong> waktu belajar berkualitas.
           </p>
         </template>
 
@@ -162,7 +162,7 @@ const leaderboardItems = computed(() => gamificationStore.dailyLeaderboard)
             Personal Leaderboard (30 Hari)
           </h3>
           <p class="text-xs text-stone-500 mt-1">
-            Riwayat performa durasi belajar terbaikmu dalam 30 hari terakhir.
+            Daftar hari-hari paling produktifmu selama sebulan terakhir.
           </p>
         </div>
 
@@ -187,16 +187,25 @@ const leaderboardItems = computed(() => gamificationStore.dailyLeaderboard)
 
             <!-- Title & Session Time -->
             <div class="flex-1 min-w-0">
-              <p class="font-extrabold text-base sm:text-lg truncate">
+              <p
+                class="font-extrabold text-base sm:text-lg truncate"
+                :class="item.rank === 1 ? 'text-white' : 'text-stone-900'"
+              >
                 {{ item.title }}
               </p>
-              <p class="text-xs sm:text-sm font-semibold opacity-90">
+              <p
+                class="text-xs sm:text-sm font-semibold opacity-90"
+                :class="item.rank === 1 ? 'text-white/90' : 'text-stone-600'"
+              >
                 Total fokus: {{ item.time }} • {{ item.sessionCount }} sesi
               </p>
             </div>
 
             <div class="shrink-0 text-right">
-              <span class="text-xs font-black uppercase px-2.5 py-1 rounded-full bg-white/50">
+              <span
+                class="text-xs font-black uppercase px-2.5 py-1 rounded-full"
+                :class="item.rank === 1 ? 'bg-white/20 text-white' : 'bg-white/50 text-stone-700'"
+              >
                 Rank #{{ item.rank }}
               </span>
             </div>
@@ -212,13 +221,13 @@ const leaderboardItems = computed(() => gamificationStore.dailyLeaderboard)
             Belum Ada Riwayat Sesi
           </p>
           <p class="text-xs text-stone-500 max-w-sm">
-            Selesaikan sesi Pomodoro fokus belajarmu untuk melihat peringkat hari paling produktif di sini.
+            Yuk selesaikan sesi Pomodoromu! Catatan hari-hari paling produktif akan muncul di sini.
           </p>
         </div>
 
         <!-- Card Footer -->
         <div class="p-4 bg-stone-50 border-t border-stone-200 text-center text-xs text-stone-500 font-semibold">
-          Data disinkronkan otomatis dari sesi Pomodoro harianmu.
+          Pencatatan waktu belajar diperbarui otomatis setelah setiap sesi Pomodoro selesai.
         </div>
       </div>
 

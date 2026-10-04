@@ -80,7 +80,7 @@ const formatSessionDate = (isoStr?: string) => {
           </div>
           <div>
             <h1 class="text-2xl font-black text-stone-900 tracking-tight leading-none">
-              PodoChat!
+              Podo AI
             </h1>
             <p class="text-xs font-bold text-orange-950/70 mt-1">
               AI Study Companion
