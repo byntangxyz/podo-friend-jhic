@@ -34,8 +34,8 @@ Salin atau buat file `.env` di dalam folder `frontend/` dengan konfigurasi berik
 NUXT_PUBLIC_API_BASE=http://localhost:8000
 
 # Kredensial AI Gateway (9Router) - Berjalan aman di server Nitro
-NUXT_AI_BASE_URL=https://9router.isasilva.web.id/v1
-NUXT_AI_API_KEY=sk-bb5608e3a1baa643-rf15xd-12318235
+NUXT_AI_BASE_URL=https://your-9router-url/v1
+NUXT_AI_API_KEY=your_9router_api_key_here
 NUXT_AI_MODEL=gemini/gemini-3.8-flash
 ```
 

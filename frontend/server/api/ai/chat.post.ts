@@ -65,9 +65,9 @@ ATURAN FORMAT: Gunakan bahasa Indonesia yang luwes dan terstruktur. JANGAN PERNA
 
   // 5. Inisialisasi Model LangChain menggunakan konfigurasi privat Nitro
   const config = useRuntimeConfig()
-  const baseURL = (config.aiBaseUrl as string) || 'https://9router.isasilva.web.id/v1'
-  const apiKey = (config.aiApiKey as string) || 'sk-bb5608e3a1baa643-rf15xd-12318235'
-  const modelName = (config.aiModel as string) || 'gemini/gemini-3.8-flash'
+  const baseURL = (config.aiBaseUrl as string) || process.env.NUXT_AI_BASE_URL || ''
+  const apiKey = (config.aiApiKey as string) || process.env.NUXT_AI_API_KEY || ''
+  const modelName = (config.aiModel as string) || process.env.NUXT_AI_MODEL || 'gemini/gemini-3.8-flash'
 
   const model = new ChatOpenAI({
     model: modelName,

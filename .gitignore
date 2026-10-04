@@ -1,0 +1,22 @@
+# Local environment files
+.env
+.env.*
+!.env.example
+*.local
+
+# MCP & Credentials
+.agent/mcp_config.json
+mcp_config.json
+
+# Dependencies & Build artifacts
+node_modules/
+vendor/
+.output/
+.nuxt/
+.nitro/
+dist/
+
+# Logs & temp
+*.log
+.DS_Store
+Thumbs.db
