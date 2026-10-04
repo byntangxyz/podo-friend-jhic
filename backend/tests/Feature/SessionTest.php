@@ -149,7 +149,7 @@ class SessionTest extends TestCase
     public function test_streak_same_day_session_does_not_increment(): void
     {
         $user = User::factory()->create();
-        $now = Carbon::now();
+        $now = Carbon::parse('2026-10-04 12:00:00');
         Carbon::setTestNow($now);
 
         GamificationStat::create([

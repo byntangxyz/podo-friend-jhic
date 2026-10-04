@@ -6,9 +6,10 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class ChatHistory extends Model
+class ChatSession extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;
 
@@ -18,25 +19,23 @@ class ChatHistory extends Model
      * @var list<string>
      */
     protected $fillable = [
-        'chat_session_id',
         'user_id',
-        'sender',
-        'message',
+        'title',
     ];
 
     /**
-     * Get the session that owns the chat history entry.
-     */
-    public function session(): BelongsTo
-    {
-        return $this->belongsTo(ChatSession::class, 'chat_session_id');
-    }
-
-    /**
-     * Get the user that owns the chat history entry.
+     * Get the user that owns the chat session.
      */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the messages for the chat session.
+     */
+    public function messages(): HasMany
+    {
+        return $this->hasMany(ChatHistory::class, 'chat_session_id');
     }
 }

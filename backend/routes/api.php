@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\ChatHistoryController;
+use App\Http\Controllers\ChatSessionController;
 use App\Http\Controllers\GamificationController;
 use App\Http\Controllers\PreferenceController;
 use App\Http\Controllers\SessionController;
@@ -33,9 +33,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/surveys/mood', [SurveyController::class, 'store']);
     Route::get('/surveys/today', [SurveyController::class, 'showToday']);
 
-    // AI Chat Memory
-    Route::post('/chat', [ChatHistoryController::class, 'store']);
-    Route::get('/chat', [ChatHistoryController::class, 'index']);
+    // AI Chat Sessions & Messages
+    Route::post('/chat-sessions', [ChatSessionController::class, 'store']);
+    Route::get('/chat-sessions', [ChatSessionController::class, 'index']);
+    Route::get('/chat-sessions/{session_id}', [ChatSessionController::class, 'show']);
+    Route::delete('/chat-sessions/{session_id}', [ChatSessionController::class, 'destroy']);
+    Route::post('/chat-sessions/{session_id}/messages', [ChatSessionController::class, 'storeMessage']);
+    Route::get('/chat-sessions/{session_id}/messages', [ChatSessionController::class, 'showMessages']);
 
     // Data Retrieval (Gamification & Preferences)
     Route::get('/gamification/stats', [GamificationController::class, 'show']);

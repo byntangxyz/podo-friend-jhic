@@ -89,6 +89,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the chat sessions for the user.
+     */
+    public function chatSessions(): HasMany
+    {
+        return $this->hasMany(ChatSession::class);
+    }
+
+    /**
      * Get the chat histories for the user.
      */
     public function chatHistories(): HasMany

@@ -24,6 +24,7 @@ class UserResource extends JsonResource
             'gamification_stat' => new GamificationStatResource($this->whenLoaded('gamificationStat')),
             'daily_surveys' => DailySurveyResource::collection($this->whenLoaded('dailySurveys')),
             'pomodoro_sessions' => PomodoroSessionResource::collection($this->whenLoaded('pomodoroSessions')),
+            'chat_sessions' => ChatSessionResource::collection($this->whenLoaded('chatSessions')),
             'chat_histories' => ChatHistoryResource::collection($this->whenLoaded('chatHistories')),
         ];
     }

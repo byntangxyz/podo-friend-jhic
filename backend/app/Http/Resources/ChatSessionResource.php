@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class ChatHistoryResource extends JsonResource
+class ChatSessionResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -16,13 +16,11 @@ class ChatHistoryResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'chat_session_id' => $this->chat_session_id,
             'user_id' => $this->user_id,
-            'sender' => $this->sender,
-            'message' => $this->message,
+            'title' => $this->title,
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
-            'user' => new UserResource($this->whenLoaded('user')),
+            'messages' => ChatHistoryResource::collection($this->whenLoaded('messages')),
         ];
     }
 }
