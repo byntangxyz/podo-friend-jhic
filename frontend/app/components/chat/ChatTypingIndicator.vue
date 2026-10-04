@@ -4,7 +4,7 @@
     <div
       class="w-10 h-10 flex-shrink-0 flex items-center justify-center p-1 rounded-2xl bg-orange-100 border border-orange-200 select-none shadow-sm"
     >
-      <AppMascot size="sm" />
+      <AppMascot size="sm" animation="thinking" />
     </div>
 
     <!-- Typing Bubble -->

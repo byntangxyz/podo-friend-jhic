@@ -76,7 +76,7 @@ const formatSessionDate = (isoStr?: string) => {
       <div class="flex items-center justify-between pb-2 border-b border-orange-300/60 flex-shrink-0">
         <div class="flex items-center gap-3">
           <div class="w-14 h-14 flex items-center justify-center">
-            <AppMascot size="sm" />
+            <AppMascot size="sm" :animation="chatStore.searchQuery ? 'searching' : 'idle'" />
           </div>
           <div>
             <h1 class="text-2xl font-black text-stone-900 tracking-tight leading-none">

@@ -12,7 +12,7 @@ const authStore = useAuthStore()
       <!-- Mascot Badge / Animation -->
       <div class="mb-6 relative">
         <div class="p-4 bg-orange-100/70 rounded-full border-2 border-orange-300 shadow-inner">
-          <AppMascot size="lg" />
+          <AppMascot size="lg" animation="excited" />
         </div>
         <span class="absolute -bottom-2 -right-2 bg-orange-500 text-white text-xs font-black px-2.5 py-1 rounded-full shadow-md animate-bounce">
           Hai! 👋

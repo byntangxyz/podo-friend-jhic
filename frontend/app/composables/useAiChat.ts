@@ -37,6 +37,7 @@ export function useAiChat() {
 
     // 3. Loading & Objek Pesan AI Kosong
     chatStore.setLoading(true)
+    chatStore.setMascotState('thinking')
     const aiMsg = chatStore.addAiMessage('')
 
     try {
@@ -96,9 +97,19 @@ export function useAiChat() {
       // 6. Sinkronisasi respons AI final ke backend Laravel
       if (fullAiText.trim()) {
         await chatStore.saveMessage('ai', fullAiText)
+        // Selebrasi sejenak setelah respons AI berhasil disajikan
+        chatStore.setMascotState('excited')
+        setTimeout(() => {
+          if (chatStore.mascotState === 'excited') {
+            chatStore.setMascotState('idle')
+          }
+        }, 3500)
+      } else {
+        chatStore.setMascotState('idle')
       }
     } catch (err: any) {
       console.error('[AI Chat Error]:', err)
+      chatStore.setMascotState('idle')
 
       // 1. Definisikan pesan error
       const fallbackError =

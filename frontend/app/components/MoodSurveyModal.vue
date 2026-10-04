@@ -1,7 +1,25 @@
 <script setup lang="ts">
 import type { MoodType } from '~/types/survey'
+import type { MascotAnimationState } from '~/types/mascot'
 
 const surveyStore = useSurveyStore()
+
+const modalMascotAnimation = computed<MascotAnimationState>(() => {
+  if (surveyStore.isSubmitting) return 'thinking'
+  switch (selectedMood.value) {
+    case 'Energetic':
+      return 'excited'
+    case 'Tired':
+    case 'Overwhelmed':
+      return 'sleepy'
+    case 'Distracted':
+      return 'searching'
+    case 'Balanced':
+      return 'listening'
+    default:
+      return 'idle'
+  }
+})
 
 const moods: Array<{
   id: MoodType
@@ -106,7 +124,7 @@ const handleSubmit = async () => {
         <!-- Header with Mascot -->
         <div class="flex items-center gap-4 mb-6">
           <div class="w-16 h-16 rounded-2xl bg-orange-100 p-1 flex items-center justify-center shrink-0 border border-orange-200">
-            <AppMascot size="sm" />
+            <AppMascot size="sm" :animation="modalMascotAnimation" />
           </div>
           <div>
             <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-700 text-xs font-bold mb-1">
