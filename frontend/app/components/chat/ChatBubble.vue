@@ -42,14 +42,27 @@ const isUser = computed(() => props.message.sender === 'user')
           : 'bg-gray-100 text-stone-900 border border-stone-200/80 rounded-tl-xs'
       "
     >
-      <!-- Message Content -->
-      <div class="text-sm sm:text-base leading-relaxed whitespace-pre-wrap break-words font-medium">
+      <!-- Message Content (Jika sudah ada teks) -->
+      <div
+        v-if="message.message"
+        class="text-sm sm:text-base leading-relaxed whitespace-pre-wrap break-words font-medium"
+      >
         {{ message.message }}
+      </div>
+
+      <!-- Typing Indicator In-Place (Saat AI sedang berpikir sebelum chunk pertama masuk) -->
+      <div
+        v-else-if="!isUser"
+        class="flex items-center gap-1.5 py-1 px-0.5"
+      >
+        <span class="w-2 h-2 rounded-full bg-orange-500 animate-bounce" style="animation-delay: 0ms;" />
+        <span class="w-2 h-2 rounded-full bg-orange-500 animate-bounce" style="animation-delay: 150ms;" />
+        <span class="w-2 h-2 rounded-full bg-orange-500 animate-bounce" style="animation-delay: 300ms;" />
       </div>
 
       <!-- Timestamp -->
       <div
-        v-if="formattedTime"
+        v-if="message.message && formattedTime"
         class="mt-1.5 flex items-center gap-1 text-[10px]"
         :class="isUser ? 'text-orange-100 justify-end' : 'text-stone-400 justify-start'"
       >

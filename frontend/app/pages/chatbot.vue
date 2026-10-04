@@ -299,8 +299,8 @@ const handleOpenSurvey = () => {
             :message="msg"
           />
 
-          <!-- AI Typing Indicator: Animasi tiga titik berkedip -->
-          <ChatTypingIndicator v-if="chatStore.isLoading" />
+          <!-- AI Typing Indicator: Hanya muncul jika pesan AI belum ditambahkan ke daftar pesan -->
+          <ChatTypingIndicator v-if="chatStore.isLoading && (!chatStore.messages.length || chatStore.messages[chatStore.messages.length - 1]?.sender !== 'ai')" />
         </template>
       </div>
 
