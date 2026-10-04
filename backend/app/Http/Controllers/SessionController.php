@@ -14,6 +14,26 @@ use Illuminate\Http\Request;
 class SessionController extends Controller
 {
     /**
+     * Get completed Pomodoro sessions for the authenticated user (for leaderboard / history).
+     */
+    public function index(Request $request): JsonResponse
+    {
+        $sessions = PomodoroSession::where('user_id', $request->user()->id)
+            ->whereNotNull('end_time')
+            ->where('duration_minutes', '>', 0)
+            ->where('created_at', '>=', Carbon::now()->subDays(30))
+            ->orderByDesc('created_at')
+            ->get();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Pomodoro sessions retrieved successfully',
+            'data' => PomodoroSessionResource::collection($sessions),
+        ], 200);
+    }
+
+
+    /**
      * Start a new Pomodoro session.
      */
     public function start(Request $request): JsonResponse

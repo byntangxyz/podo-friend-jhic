@@ -16,34 +16,29 @@ onMounted(async () => {
 
 const streak = computed(() => gamificationStore.streakDays)
 const focusTime = computed(() => gamificationStore.formattedFocusTime)
+const achievementPercentage = computed(() => {
+  const total = gamificationStore.achievements.length
+  if (total === 0) return 0
+  return Math.round((gamificationStore.unlockedAchievementsCount / total) * 100)
+})
 
-// Dummy leaderboard data yang mencerminkan Figma frame #60:1870
-const leaderboardItems = computed(() => [
-  {
-    rank: 1,
-    title: 'Belajar Python (Hari Ini)',
-    time: focusTime.value,
-    bgClass: 'bg-orange-500/80 text-white',
-    iconColor: 'text-amber-300',
-    isTrophy: true,
-  },
-  {
-    rank: 2,
-    title: 'Belajar Python (1 hari lalu)',
-    time: `${Math.max(1, Math.floor(gamificationStore.totalMinutes * 0.4))} menit`,
-    bgClass: 'bg-orange-400/50 text-stone-900',
-    iconColor: 'text-orange-600',
-    isTrophy: false,
-  },
-  {
-    rank: 3,
-    title: 'Review Algoritma (2 hari lalu)',
-    time: `${Math.max(1, Math.floor(gamificationStore.totalMinutes * 0.25))} menit`,
-    bgClass: 'bg-orange-300/30 text-stone-800',
-    iconColor: 'text-orange-700',
-    isTrophy: false,
-  },
-])
+const isStreakActive = computed(() => {
+  const lastActiveStr = gamificationStore.stats?.last_active_date
+  if (!lastActiveStr) return false
+  if ((gamificationStore.stats?.current_streak ?? 0) <= 0) return false
+
+  const lastActive = new Date(lastActiveStr)
+  const today = new Date()
+
+  return (
+    lastActive.getFullYear() === today.getFullYear() &&
+    lastActive.getMonth() === today.getMonth() &&
+    lastActive.getDate() === today.getDate()
+  )
+})
+
+// Leaderboard data riil dari sesi Pomodoro harian 30 hari terakhir (terbanyak ke terendah)
+const leaderboardItems = computed(() => gamificationStore.dailyLeaderboard)
 </script>
 
 <template>
@@ -93,31 +88,67 @@ const leaderboardItems = computed(() => [
       <!-- Left: Giant Flame Icon with Streak Number inside -->
       <div class="relative flex items-center justify-center shrink-0">
         <!-- Flame SVG Background -->
-        <div class="w-36 h-36 sm:w-44 sm:h-44 flex items-center justify-center text-orange-500 animate-pulse">
-          <Icon name="lucide:flame" class="w-full h-full stroke-[1.5] fill-orange-500" />
+        <div
+          class="w-36 h-36 sm:w-44 sm:h-44 flex items-center justify-center transition-all"
+          :class="isStreakActive ? 'text-orange-500 animate-pulse' : 'text-stone-300'"
+        >
+          <Icon
+            name="lucide:flame"
+            class="w-full h-full stroke-[1.5]"
+            :class="isStreakActive ? 'fill-orange-500' : 'fill-stone-200'"
+          />
         </div>
         <!-- Streak text overlay -->
         <div class="absolute inset-0 flex items-center justify-center pt-6">
           <span
-            class="text-4xl sm:text-6xl font-black text-stone-900 drop-shadow-[0_2px_4px_rgba(255,255,255,0.8)]"
+            class="text-4xl sm:text-6xl font-black drop-shadow-[0_2px_4px_rgba(255,255,255,0.8)]"
+            :class="isStreakActive ? 'text-stone-900' : 'text-stone-600'"
           >
             {{ streak }}
           </span>
         </div>
       </div>
 
-      <!-- Right: Congratulatory Text -->
+      <!-- Right: Text Content -->
       <div class="flex-1 text-center md:text-left">
-        <h2 class="text-2xl sm:text-4xl font-bold text-stone-900 leading-tight">
-          Kamu sedang berapi-api, <span class="text-orange-600">{{ authStore.user?.name || 'Teman Belajar' }}</span>!
-        </h2>
-        <p class="text-3xl sm:text-5xl font-black text-stone-900 mt-2 tracking-tight">
-          dengan Streak <span class="text-orange-500 underline decoration-orange-400 decoration-wavy">{{ streak }} Hari!</span>
-        </p>
-        <p class="text-sm text-stone-600 mt-3 max-w-xl">
-          Konsistensi adalah kunci penguasaan materi. Kamu telah mengumpulkan total
-          <strong class="text-stone-900">{{ focusTime }}</strong> fokus belajar berkualitas.
-        </p>
+        <!-- Jika Streak Menyala (Berapi-api) -->
+        <template v-if="isStreakActive">
+          <h2 class="text-2xl sm:text-4xl font-bold text-stone-900 leading-tight">
+            Kamu sedang berapi-api, <span class="text-orange-600">{{ authStore.user?.name || 'Teman Belajar' }}</span>!
+          </h2>
+          <p class="text-3xl sm:text-5xl font-black text-stone-900 mt-2 tracking-tight">
+            dengan Streak <span class="text-orange-500">{{ streak }} Hari!</span>
+          </p>
+          <p class="text-sm text-stone-600 mt-3 max-w-xl">
+            Konsistensi adalah kunci penguasaan materi. Kamu telah mengumpulkan total
+            <strong class="text-stone-900">{{ focusTime }}</strong> fokus belajar berkualitas.
+          </p>
+        </template>
+
+        <!-- Jika Streak Belum Menyala (Ajakan Belajar) -->
+        <template v-else>
+          <h2 class="text-2xl sm:text-4xl font-bold text-stone-900 leading-tight">
+            Yuk, mulai sesi belajarmu, <span class="text-orange-600">{{ authStore.user?.name || 'Teman Belajar' }}</span>!
+          </h2>
+          <p class="text-2xl sm:text-4xl font-black text-stone-900 mt-2 tracking-tight">
+            <span v-if="streak > 0">
+              Pertahankan Streak <span class="text-orange-500">{{ streak }} Hari</span> hari ini!
+            </span>
+            <span v-else>
+              Mulai Sesi Fokus &amp; Bangun <span class="text-orange-500">Streak Pertama</span>!
+            </span>
+          </p>
+          <p class="text-sm text-stone-600 mt-3 max-w-xl">
+            Selesaikan minimal 1 sesi Pomodoro hari ini untuk menyalakan apimu dan menjaga konsistensi belajarmu bersama Podo.
+          </p>
+          <NuxtLink
+            to="/dashboard"
+            class="mt-4 inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-extrabold text-sm shadow transition-all hover:scale-105"
+          >
+            <Icon name="lucide:play" class="w-4 h-4 fill-white" />
+            <span>Mulai Belajar Sekarang</span>
+          </NuxtLink>
+        </template>
       </div>
     </div>
 
@@ -136,7 +167,7 @@ const leaderboardItems = computed(() => [
         </div>
 
         <!-- Leaderboard Rows (Figma #60:1861, #60:1878, #60:1893) -->
-        <div class="divide-y divide-orange-200/60">
+        <div v-if="leaderboardItems.length > 0" class="divide-y divide-orange-200/60">
           <div
             v-for="item in leaderboardItems"
             :key="item.rank"
@@ -160,7 +191,7 @@ const leaderboardItems = computed(() => [
                 {{ item.title }}
               </p>
               <p class="text-xs sm:text-sm font-semibold opacity-90">
-                Session time: {{ item.time }}
+                Total fokus: {{ item.time }} • {{ item.sessionCount }} sesi
               </p>
             </div>
 
@@ -170,6 +201,19 @@ const leaderboardItems = computed(() => [
               </span>
             </div>
           </div>
+        </div>
+
+        <!-- Empty State jika belum ada riwayat sesi -->
+        <div v-else class="p-8 text-center flex flex-col items-center justify-center gap-3">
+          <div class="w-14 h-14 rounded-2xl bg-orange-100 flex items-center justify-center text-orange-500">
+            <Icon name="lucide:calendar-clock" class="w-7 h-7" />
+          </div>
+          <p class="font-extrabold text-stone-800 text-base">
+            Belum Ada Riwayat Sesi
+          </p>
+          <p class="text-xs text-stone-500 max-w-sm">
+            Selesaikan sesi Pomodoro fokus belajarmu untuk melihat peringkat hari paling produktif di sini.
+          </p>
         </div>
 
         <!-- Card Footer -->
@@ -191,13 +235,13 @@ const leaderboardItems = computed(() => [
             </h3>
             <div class="flex items-center justify-between text-xs font-bold text-stone-700 mt-1">
               <span>{{ gamificationStore.unlockedAchievementsCount }} / {{ gamificationStore.achievements.length }} Dimiliki</span>
-              <span>{{ Math.round((gamificationStore.unlockedAchievementsCount / gamificationStore.achievements.length) * 100) }}%</span>
+              <span>{{ achievementPercentage }}%</span>
             </div>
             <!-- Progress Bar (Figma #60:1931) -->
             <div class="w-full bg-stone-200 rounded-full h-3 mt-2 overflow-hidden">
               <div
                 class="bg-orange-500 h-full rounded-full transition-all duration-500"
-                :style="{ width: `${(gamificationStore.unlockedAchievementsCount / gamificationStore.achievements.length) * 100}%` }"
+                :style="{ width: `${achievementPercentage}%` }"
               />
             </div>
           </div>

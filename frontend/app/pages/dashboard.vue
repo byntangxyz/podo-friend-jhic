@@ -152,5 +152,8 @@ const moodBadgeInfo = computed(() => {
 
     <!-- Mandatory Mood Survey Modal (Shows when todaySurvey is null) -->
     <MoodSurveyModal />
+
+    <!-- Achievement Celebration Modal (Shows when a session unlocks new achievements) -->
+    <AchievementCelebrationModal />
   </div>
 </template>

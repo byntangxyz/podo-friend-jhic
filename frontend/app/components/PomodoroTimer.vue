@@ -1,34 +1,26 @@
 <script setup lang="ts">
-import { useLocalStorage } from '@vueuse/core'
-
 const timerStore = useTimerStore()
 const authStore = useAuthStore()
+const taskStore = useTaskStore()
 
 // State untuk drawer task
 const isTaskDrawerOpen = ref(true)
 
-// Interface Task
-interface UserTask {
-  id: string
-  title: string
-  subtitle?: string
-  completed: boolean
-}
-
-// User by default TANPA tasks, disimpan secara reaktif di localStorage
-const tasks = useLocalStorage<UserTask[]>('podofriend_tasks', [])
+// Fetch task saat komponen dimuat
+onMounted(() => {
+  taskStore.fetchTasks()
+})
 
 // Form tambah task
 const isAddingTask = ref(false)
 const newTaskTitle = ref('')
-const newTaskSubtitle = ref('')
 
 // Sinkronisasi active task jika daftar task berubah
 watchEffect(() => {
-  if (tasks.value.length > 0) {
-    const hasCurrentActive = tasks.value.some(t => t.title === timerStore.activeTask)
+  if (taskStore.tasks.length > 0) {
+    const hasCurrentActive = taskStore.tasks.some(t => t.title === timerStore.activeTask)
     if (!hasCurrentActive) {
-      const firstPending = tasks.value.find(t => !t.completed) ?? tasks.value[0]
+      const firstPending = taskStore.tasks.find(t => !t.is_completed) ?? taskStore.tasks[0]
       if (firstPending?.title) {
         timerStore.setActiveTask(firstPending.title)
       }
@@ -38,21 +30,12 @@ watchEffect(() => {
   }
 })
 
-const handleAddTask = () => {
+const handleAddTask = async () => {
   const trimmed = newTaskTitle.value.trim()
   if (!trimmed) return
 
-  const newTask: UserTask = {
-    id: Date.now().toString(),
-    title: trimmed,
-    subtitle: newTaskSubtitle.value.trim() || undefined,
-    completed: false,
-  }
-
-  tasks.value.push(newTask)
-  timerStore.setActiveTask(newTask.title)
+  await taskStore.addTask(trimmed)
   newTaskTitle.value = ''
-  newTaskSubtitle.value = ''
   isAddingTask.value = false
 }
 
@@ -60,20 +43,14 @@ const selectTask = (taskTitle: string) => {
   timerStore.setActiveTask(taskTitle)
 }
 
-const toggleTaskCompletion = (task: UserTask, event: Event) => {
+const toggleTaskCompletion = (taskId: string, event: Event) => {
   event.stopPropagation()
-  task.completed = !task.completed
+  taskStore.toggleTask(taskId)
 }
 
 const deleteTask = (taskId: string, event: Event) => {
   event.stopPropagation()
-  tasks.value = tasks.value.filter(t => t.id !== taskId)
-  const first = tasks.value[0]
-  if (first?.title) {
-    timerStore.setActiveTask(first.title)
-  } else {
-    timerStore.setActiveTask('Fokus Mandiri')
-  }
+  taskStore.deleteTask(taskId)
 }
 
 const toggleTaskDrawer = () => {
@@ -142,18 +119,6 @@ const companionMascotAnimation = computed<MascotAnimationState>(() => {
       </NuxtLink>
     </div>
 
-    <!-- Streak Alert Banner (Figma #44:680) -->
-    <div
-      class="mb-6 inline-flex items-center gap-3 px-6 py-2.5 rounded-full bg-[#FFC9A8] border border-orange-300 shadow-sm"
-    >
-      <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-xs">
-        <Icon name="lucide:flame" class="w-5 h-5 text-orange-500" />
-      </div>
-      <span class="text-xs sm:text-sm font-extrabold text-stone-800">
-        {{ authStore.isAuthenticated ? 'Kamu membuka Streak Belajar!' : 'Mode Tamu: Coba Pomodoro Timer!' }}
-      </span>
-    </div>
-
     <!-- Main Container with Task Drawer on Left and Timer on Center -->
     <div class="w-full flex flex-col lg:flex-row items-start justify-start gap-6 lg:gap-8 relative z-10">
       <!-- Task Drawer (Figma #45:789 My Task) -->
@@ -166,10 +131,10 @@ const companionMascotAnimation = computed<MascotAnimationState>(() => {
             <Icon name="lucide:check-square" class="w-5 h-5 text-white" />
             <h3 class="font-black text-lg">My Task</h3>
             <span
-              v-if="tasks.length > 0"
+              v-if="taskStore.totalCount > 0"
               class="text-[11px] font-extrabold bg-white/25 px-2 py-0.5 rounded-full"
             >
-              {{ tasks.filter(t => t.completed).length }}/{{ tasks.length }}
+              {{ taskStore.completedCount }}/{{ taskStore.totalCount }}
             </span>
           </div>
 
@@ -206,13 +171,6 @@ const companionMascotAnimation = computed<MascotAnimationState>(() => {
               class="w-full text-xs font-bold px-3 py-2 rounded-xl bg-white border border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-500 text-stone-900"
               @keydown.enter="handleAddTask"
             />
-            <input
-              v-model="newTaskSubtitle"
-              type="text"
-              placeholder="Catatan / materi (opsional)..."
-              class="w-full text-[11px] px-3 py-1.5 rounded-xl bg-white border border-stone-200 focus:outline-none focus:ring-2 focus:ring-orange-500 text-stone-700"
-              @keydown.enter="handleAddTask"
-            />
             <div class="flex items-center justify-end gap-2 pt-1">
               <button
                 type="button"
@@ -223,18 +181,28 @@ const companionMascotAnimation = computed<MascotAnimationState>(() => {
               </button>
               <button
                 type="button"
-                :disabled="!newTaskTitle.trim()"
-                class="px-3 py-1 rounded-lg text-[11px] font-extrabold bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-40 cursor-pointer shadow-xs"
+                :disabled="!newTaskTitle.trim() || taskStore.isSubmitting"
+                class="px-3 py-1 rounded-lg text-[11px] font-extrabold bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-40 cursor-pointer shadow-xs flex items-center gap-1.5"
                 @click="handleAddTask"
               >
-                Simpan Task
+                <Icon v-if="taskStore.isSubmitting" name="lucide:loader-2" class="w-3.5 h-3.5 animate-spin" />
+                <span>Simpan Task</span>
               </button>
             </div>
           </div>
 
-          <!-- Empty State (User by default tanpa task) -->
+          <!-- Loading State -->
           <div
-            v-if="tasks.length === 0 && !isAddingTask"
+            v-if="taskStore.isLoading"
+            class="p-6 text-center flex flex-col items-center justify-center gap-2"
+          >
+            <Icon name="lucide:loader-2" class="w-6 h-6 text-orange-500 animate-spin" />
+            <span class="text-xs text-stone-500 font-medium">Memuat target tugas...</span>
+          </div>
+
+          <!-- Empty State -->
+          <div
+            v-else-if="taskStore.tasks.length === 0 && !isAddingTask"
             class="p-6 text-center flex flex-col items-center justify-center gap-2"
           >
             <div class="w-12 h-12 rounded-2xl bg-orange-100 flex items-center justify-center text-orange-500 mb-1">
@@ -256,10 +224,10 @@ const companionMascotAnimation = computed<MascotAnimationState>(() => {
             </button>
           </div>
 
-          <!-- Task List (Diambil dari localStorage) -->
+          <!-- Task List (Diambil dari taskStore) -->
           <div v-else class="p-2 divide-y divide-orange-100 max-h-72 overflow-y-auto">
             <div
-              v-for="t in tasks"
+              v-for="t in taskStore.sortedTasks"
               :key="t.id"
               class="w-full p-2.5 rounded-2xl text-left transition-colors flex items-center justify-between gap-2.5 group cursor-pointer"
               :class="timerStore.activeTask === t.title ? 'bg-orange-100/70 border border-orange-300' : 'hover:bg-orange-50/70'"
@@ -270,11 +238,11 @@ const companionMascotAnimation = computed<MascotAnimationState>(() => {
                 type="button"
                 class="shrink-0 p-1 text-stone-400 hover:text-orange-600 transition-colors cursor-pointer"
                 title="Tandai selesai"
-                @click="toggleTaskCompletion(t, $event)"
+                @click="toggleTaskCompletion(t.id, $event)"
               >
                 <Icon
-                  :name="t.completed ? 'lucide:check-circle-2' : 'lucide:circle'"
-                  :class="t.completed ? 'text-emerald-500' : 'text-stone-300 group-hover:text-orange-400'"
+                  :name="t.is_completed ? 'lucide:check-circle-2' : 'lucide:circle'"
+                  :class="t.is_completed ? 'text-emerald-500' : 'text-stone-300 group-hover:text-orange-400'"
                   class="w-5 h-5"
                 />
               </button>
@@ -283,12 +251,9 @@ const companionMascotAnimation = computed<MascotAnimationState>(() => {
               <div class="flex-1 min-w-0">
                 <p
                   class="text-xs font-bold truncate"
-                  :class="t.completed ? 'line-through text-stone-400 font-medium' : 'text-stone-900'"
+                  :class="t.is_completed ? 'line-through text-stone-400 font-medium' : 'text-stone-900'"
                 >
                   {{ t.title }}
-                </p>
-                <p v-if="t.subtitle" class="text-[10px] text-stone-500 line-clamp-1">
-                  {{ t.subtitle }}
                 </p>
               </div>
 
@@ -320,19 +285,21 @@ const companionMascotAnimation = computed<MascotAnimationState>(() => {
         <div class="flex items-center gap-2 p-1.5 rounded-2xl bg-orange-100/80 mb-6">
           <button
             type="button"
-            class="px-5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer"
+            class="px-5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer flex items-center gap-2"
             :class="timerStore.mode === 'work' ? 'bg-orange-500 text-white shadow-xs' : 'text-stone-700 hover:text-orange-600'"
             @click="timerStore.setDuration(25, 'work')"
           >
-            🎯 Mode Fokus (25m)
+            <Icon name="lucide:target" class="w-4 h-4" />
+            <span>Fokus</span>
           </button>
           <button
             type="button"
-            class="px-5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer"
+            class="px-5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer flex items-center gap-2"
             :class="timerStore.mode === 'break' ? 'bg-orange-500 text-white shadow-xs' : 'text-stone-700 hover:text-orange-600'"
             @click="timerStore.setDuration(5, 'break')"
           >
-            ☕ Istirahat (5m)
+            <Icon name="lucide:coffee" class="w-4 h-4" />
+            <span>Istirahat</span>
           </button>
         </div>
 

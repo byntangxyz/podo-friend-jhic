@@ -9,7 +9,18 @@ export interface PomodoroSession {
 }
 
 export interface SessionResponse {
-  success: boolean
+  status?: string
+  success?: boolean | string
   message: string
   data: PomodoroSession
+  meta?: {
+    newly_unlocked_achievements?: string[]
+  }
+}
+
+export interface SessionListResponse {
+  status?: string
+  success?: boolean | string
+  message: string
+  data: PomodoroSession[]
 }

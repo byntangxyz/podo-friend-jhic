@@ -1,10 +1,18 @@
 import { defineStore } from 'pinia'
 import type { GamificationStats, GamificationResponse } from '~/types/gamification'
+import type { PomodoroSession, SessionListResponse } from '~/types/session'
+import {
+  ACHIEVEMENT_DEFINITIONS,
+  type AchievementsResponse,
+  type DisplayAchievement,
+} from '~/types/achievement'
 import { useAuthStore } from '~/stores/auth'
 
 export const useGamificationStore = defineStore('gamification', {
   state: () => ({
     stats: null as GamificationStats | null,
+    unlockedCodes: [] as string[],
+    sessions: [] as PomodoroSession[],
     isLoading: false,
     lastFetchedAt: null as number | null,
   }),
@@ -21,60 +29,124 @@ export const useGamificationStore = defineStore('gamification', {
       }
       return `${remainingMinutes} menit`
     },
-    achievements: (state) => {
+    achievements: (state): DisplayAchievement[] => {
       const streak = state.stats?.current_streak ?? 0
       const totalMinutes = state.stats?.total_focus_time ?? 0
 
-      return [
-        {
-          id: 'streak-first',
-          title: 'Langkah Awal (1 Hari)',
-          description: 'Menyelesaikan sesi Pomodoro hari pertama',
-          unlocked: streak >= 1,
-          threshold: 1,
-          current: Math.min(streak, 1),
-          icon: 'lucide:flame',
-        },
-        {
-          id: 'streak-7',
-          title: 'Konsistensi Mingguan (7 Hari)',
-          description: 'Pertahankan streak fokus selama 7 hari berturut-turut',
-          unlocked: streak >= 7,
-          threshold: 7,
-          current: Math.min(streak, 7),
-          icon: 'lucide:sparkles',
-        },
-        {
-          id: 'streak-pro',
-          title: 'Streak Pro (30 Days)',
-          description: 'Fokus belajar tak terhentikan selama 30 hari penuh',
-          unlocked: streak >= 30,
-          threshold: 30,
-          current: Math.min(streak, 30),
-          icon: 'lucide:flame',
-        },
-        {
-          id: 'streak-max',
-          title: 'Streak Max (50 Days)',
-          description: 'Dedikasi luar biasa 50 hari konsisten',
-          unlocked: streak >= 50,
-          threshold: 50,
-          current: Math.min(streak, 50),
-          icon: 'lucide:crown',
-        },
-        {
-          id: 'focus-century',
-          title: 'Master Fokus (100 Jam)',
-          description: 'Mencapai total 6.000 menit waktu belajar produktif',
-          unlocked: totalMinutes >= 6000,
-          threshold: 6000,
-          current: Math.min(totalMinutes, 6000),
-          icon: 'lucide:award',
-        },
-      ]
+      return Object.values(ACHIEVEMENT_DEFINITIONS).map((def) => {
+        const isUnlocked = state.unlockedCodes.includes(def.code)
+        let current = 0
+
+        if (def.type === 'session') {
+          current = isUnlocked ? 1 : 0
+        } else if (def.type === 'minutes') {
+          current = Math.min(totalMinutes, def.threshold)
+        } else if (def.type === 'streak') {
+          current = Math.min(streak, def.threshold)
+        }
+
+        return {
+          ...def,
+          id: def.code,
+          unlocked: isUnlocked,
+          current,
+        }
+      })
     },
     unlockedAchievementsCount(): number {
       return this.achievements.filter(a => a.unlocked).length
+    },
+    dailyLeaderboard: (state) => {
+      const map = new Map<string, { dateStr: string, rawDate: Date, totalMinutes: number, sessionCount: number }>()
+
+      for (const s of state.sessions) {
+        const dur = s.duration_minutes ?? 0
+        if (dur <= 0) continue
+
+        const d = new Date(s.start_time || s.created_at || '')
+        if (isNaN(d.getTime())) continue
+
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+        const existing = map.get(key)
+        if (existing) {
+          existing.totalMinutes += dur
+          existing.sessionCount += 1
+        } else {
+          map.set(key, {
+            dateStr: key,
+            rawDate: d,
+            totalMinutes: dur,
+            sessionCount: 1,
+          })
+        }
+      }
+
+      // Urutkan dari total menit terbesar ke terkecil
+      const sorted = Array.from(map.values()).sort((a, b) => b.totalMinutes - a.totalMinutes)
+
+      const today = new Date()
+      const yesterday = new Date()
+      yesterday.setDate(today.getDate() - 1)
+
+      return sorted.map((item, index) => {
+        const rank = index + 1
+        const d = item.rawDate
+
+        const isToday =
+          d.getFullYear() === today.getFullYear() &&
+          d.getMonth() === today.getMonth() &&
+          d.getDate() === today.getDate()
+
+        const isYesterday =
+          d.getFullYear() === yesterday.getFullYear() &&
+          d.getMonth() === yesterday.getMonth() &&
+          d.getDate() === yesterday.getDate()
+
+        const formattedDate = d.toLocaleDateString('id-ID', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        })
+
+        let displayTitle = formattedDate
+        if (isToday) {
+          displayTitle = `Hari Ini (${formattedDate})`
+        } else if (isYesterday) {
+          displayTitle = `Kemarin (${formattedDate})`
+        }
+
+        let formattedTime = `${item.totalMinutes} menit`
+        if (item.totalMinutes >= 60) {
+          const h = Math.floor(item.totalMinutes / 60)
+          const m = item.totalMinutes % 60
+          formattedTime = m > 0 ? `${h}j ${m}m` : `${h} jam`
+        }
+
+        let bgClass = 'bg-stone-100/70 text-stone-800'
+        let iconColor = 'text-stone-600'
+        if (rank === 1) {
+          bgClass = 'bg-orange-500/80 text-white'
+          iconColor = 'text-amber-300'
+        } else if (rank === 2) {
+          bgClass = 'bg-orange-400/50 text-stone-900'
+          iconColor = 'text-orange-600'
+        } else if (rank === 3) {
+          bgClass = 'bg-orange-300/30 text-stone-800'
+          iconColor = 'text-orange-700'
+        }
+
+        return {
+          rank,
+          title: displayTitle,
+          time: formattedTime,
+          totalMinutes: item.totalMinutes,
+          sessionCount: item.sessionCount,
+          bgClass,
+          iconColor,
+          isTrophy: rank === 1,
+        }
+      })
     },
   },
 
@@ -96,6 +168,46 @@ export const useGamificationStore = defineStore('gamification', {
         console.error('Failed to fetch gamification stats:', error)
       } finally {
         this.isLoading = false
+      }
+
+      // Also refresh achievements and session history
+      await Promise.all([
+        this.fetchAchievements(),
+        this.fetchSessions(),
+      ])
+    },
+
+    async fetchAchievements() {
+      const authStore = useAuthStore()
+      if (!authStore.isAuthenticated) return
+
+      try {
+        const res = await useApiFetch<AchievementsResponse>('/api/achievements', {
+          method: 'GET',
+        })
+        if (res?.unlocked_codes && Array.isArray(res.unlocked_codes)) {
+          this.unlockedCodes = res.unlocked_codes
+        } else if (res?.data && Array.isArray(res.data)) {
+          this.unlockedCodes = res.data.map(a => a.achievement_code)
+        }
+      } catch (error) {
+        console.error('Failed to fetch achievements from server:', error)
+      }
+    },
+
+    async fetchSessions() {
+      const authStore = useAuthStore()
+      if (!authStore.isAuthenticated) return
+
+      try {
+        const res = await useApiFetch<SessionListResponse>('/api/sessions', {
+          method: 'GET',
+        })
+        if (res?.data && Array.isArray(res.data)) {
+          this.sessions = res.data
+        }
+      } catch (error) {
+        console.error('Failed to fetch sessions history:', error)
       }
     },
   },

@@ -15,6 +15,8 @@ export const useTimerStore = defineStore('timer', {
     timerIntervalId: null as ReturnType<typeof setInterval> | null,
     isCompletedModalOpen: false,
     completedDurationMinutes: 0,
+    newlyUnlockedAchievements: [] as string[],
+    isAchievementCelebrationOpen: false,
   }),
 
   getters: {
@@ -109,10 +111,17 @@ export const useTimerStore = defineStore('timer', {
       if (authStore.isAuthenticated && this.currentSessionId) {
         this.isLoadingSession = true
         try {
-          await useApiFetch<SessionResponse>(`/api/sessions/${this.currentSessionId}`, {
+          const res = await useApiFetch<SessionResponse>(`/api/sessions/${this.currentSessionId}`, {
             method: 'PUT',
           })
-          // Update gamification stats
+
+          const newCodes = res?.meta?.newly_unlocked_achievements
+          if (Array.isArray(newCodes) && newCodes.length > 0) {
+            this.newlyUnlockedAchievements = newCodes
+            this.isAchievementCelebrationOpen = true
+          }
+
+          // Update gamification stats & achievements
           await gamificationStore.fetchStats().catch(() => {})
         } catch (error) {
           console.error('Failed to complete Pomodoro session on server:', error)
@@ -128,6 +137,11 @@ export const useTimerStore = defineStore('timer', {
 
     closeCompletedModal() {
       this.isCompletedModalOpen = false
+    },
+
+    closeAchievementCelebration() {
+      this.isAchievementCelebrationOpen = false
+      this.newlyUnlockedAchievements = []
     },
   },
 })

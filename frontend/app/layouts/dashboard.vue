@@ -12,7 +12,7 @@ const navItems = [
   { name: 'Timer Fokus', path: '/dashboard', icon: 'lucide:timer' },
   { name: 'Statistik & Progres', path: '/gamification/stats', icon: 'lucide:flame' },
   { name: 'AI Companion', path: '/chatbot', icon: 'lucide:bot' },
-  { name: 'Pengaturan', path: '/settings', icon: 'lucide:settings', badge: 'Soon' },
+  { name: 'Pengaturan', path: '/settings', icon: 'lucide:settings' },
 ]
 </script>
 
@@ -64,12 +64,25 @@ const navItems = [
             <Icon name="lucide:bot" class="w-4 h-4" />
             <span>AI Chat</span>
           </NuxtLink>
+
+          <NuxtLink
+            to="/settings"
+            class="px-4 py-2 rounded-full text-sm font-semibold transition-all flex items-center gap-1.5"
+            :class="route.path === '/settings' ? 'bg-orange-500 text-white shadow-md' : 'text-stone-600 hover:text-orange-600 hover:bg-orange-100/50'"
+          >
+            <Icon name="lucide:settings" class="w-4 h-4" />
+            <span>Pengaturan</span>
+          </NuxtLink>
         </nav>
 
         <!-- Right Side: User Profile & Quick Actions -->
         <div class="flex items-center gap-3">
-          <div class="hidden sm:flex items-center gap-3 pl-3 border-l border-orange-200">
-            <div class="w-9 h-9 rounded-full bg-orange-100 border border-orange-300 flex items-center justify-center font-extrabold text-orange-600 text-sm">
+          <NuxtLink
+            to="/settings"
+            class="hidden sm:flex items-center gap-3 pl-3 border-l border-orange-200 group hover:opacity-85 transition-opacity cursor-pointer"
+            title="Buka Pengaturan Akun"
+          >
+            <div class="w-9 h-9 rounded-full bg-orange-100 border border-orange-300 flex items-center justify-center font-extrabold text-orange-600 text-sm group-hover:scale-105 transition-transform">
               {{ authStore.user?.name ? authStore.user.name.charAt(0).toUpperCase() : 'U' }}
             </div>
             <div class="flex flex-col text-left">
@@ -80,7 +93,7 @@ const navItems = [
                 {{ authStore.user?.email }}
               </span>
             </div>
-          </div>
+          </NuxtLink>
 
           <button
             type="button"

@@ -28,6 +28,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Pomodoro Sessions
     Route::prefix('sessions')->group(function () {
+        Route::get('/', [SessionController::class, 'index']);
         Route::post('/', [SessionController::class, 'start']);
         Route::put('/{id}', [SessionController::class, 'complete']);
     });

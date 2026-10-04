@@ -320,4 +320,48 @@ class SessionTest extends TestCase
             ->assertJsonPath('data.session.duration_minutes', 2)
             ->assertJsonPath('data.gamification_stat.total_focus_time', 2);
     }
+
+    public function test_user_can_get_completed_sessions(): void
+    {
+        $user = User::factory()->create();
+
+        // Completed session
+        PomodoroSession::create([
+            'user_id' => $user->id,
+            'start_time' => Carbon::now()->subMinutes(30),
+            'end_time' => Carbon::now(),
+            'duration_minutes' => 30,
+        ]);
+
+        // Uncompleted session
+        PomodoroSession::create([
+            'user_id' => $user->id,
+            'start_time' => Carbon::now(),
+            'end_time' => null,
+            'duration_minutes' => null,
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->getJson('/api/sessions');
+
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'status',
+                'message',
+                'data' => [
+                    '*' => [
+                        'id',
+                        'user_id',
+                        'start_time',
+                        'end_time',
+                        'duration_minutes',
+                        'created_at',
+                        'updated_at',
+                    ],
+                ],
+            ]);
+
+        $this->assertCount(1, $response->json('data'));
+        $this->assertEquals(30, $response->json('data.0.duration_minutes'));
+    }
 }
