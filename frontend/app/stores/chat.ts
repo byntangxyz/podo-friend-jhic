@@ -281,7 +281,19 @@ export const useChatStore = defineStore('chat', {
         created_at: new Date().toISOString(),
       }
       this.messages.push(newMsg)
-      return newMsg
+      // Kembalikan referensi proxy reaktif dari array Pinia
+      return this.messages[this.messages.length - 1]!
+    },
+
+    /**
+     * Memperbarui teks pesan AI tertentu secara reaktif (misal saat streaming atau error)
+     */
+    updateAiMessage(id: string | number | undefined, text: string) {
+      if (!id) return
+      const target = this.messages.find((m) => String(m.id) === String(id))
+      if (target) {
+        target.message = text
+      }
     },
 
     selectSession(sessionId: string | number) {

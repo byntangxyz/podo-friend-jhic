@@ -84,11 +84,13 @@ export function useAiChat() {
           const chunk = decoder.decode(value, { stream: true })
           fullAiText += chunk
           aiMsg.message = fullAiText
+          chatStore.updateAiMessage(aiMsg.id, fullAiText)
         }
       } else {
         // Fallback jika browser reader tidak tersedia
         fullAiText = await response.text()
         aiMsg.message = fullAiText
+        chatStore.updateAiMessage(aiMsg.id, fullAiText)
       }
 
       // 6. Sinkronisasi respons AI final ke backend Laravel
@@ -96,14 +98,24 @@ export function useAiChat() {
         await chatStore.saveMessage('ai', fullAiText)
       }
     } catch (err: any) {
-      console.error('[AI Chat Streaming Error]:', err)
+      console.error('[AI Chat Error]:', err)
+
+      // 1. Definisikan pesan error
       const fallbackError =
         aiMsg.message.trim() ||
-        'Maaf, terjadi kendala koneksi saat menghubungi Podo. Mari coba kirim pesan lagi ya!'
-      aiMsg.message = fallbackError
+        err?.message ||
+        'Maaf, PodoFriend sedang mengalami gangguan koneksi. Coba lagi ya!'
+
+      // 2. UPDATE STATE LOKAL AGAR UI LANGSUNG BERUBAH (Hapus titik tiga)
+      if (aiMsg) {
+        aiMsg.message = fallbackError
+        chatStore.updateAiMessage(aiMsg.id, fallbackError)
+      }
+
+      // 3. Simpan ke database backend
       await chatStore.saveMessage('ai', fallbackError)
     } finally {
-      // 7. Selesai
+      // 4. Matikan status loading global
       chatStore.setLoading(false)
     }
   }
