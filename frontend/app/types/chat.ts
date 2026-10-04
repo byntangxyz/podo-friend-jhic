@@ -7,9 +7,30 @@ export interface ChatMessage {
   created_at?: string
 }
 
-export interface ChatHistoryResponse {
-  success: boolean | string
-  message: string
+export interface ChatSession {
+  id: string | number
+  title?: string
+  created_at?: string
+  updated_at?: string
+  messages_count?: number
+  last_message?: string
+}
+
+export interface ChatSessionsResponse {
+  success?: boolean | string
+  message?: string
+  data: ChatSession[]
+}
+
+export interface CreateSessionResponse {
+  success?: boolean | string
+  message?: string
+  data: ChatSession
+}
+
+export interface SessionMessagesResponse {
+  success?: boolean | string
+  message?: string
   data: ChatMessage[]
 }
 
@@ -19,7 +40,8 @@ export interface SendMessagePayload {
 }
 
 export interface SendMessageResponse {
-  success: boolean | string
-  message: string
+  success?: boolean | string
+  message?: string
   data: ChatMessage
 }
+

@@ -19,6 +19,7 @@ export function useAiChat() {
 
   /**
    * Menyiapkan instance model LLM via LangChain yang terhubung ke 9Router
+   * Kalibrasi: temperature: 0.7 agar respons natural, empatik, dan tidak kaku
    */
   const getModel = () => {
     const baseURL =
@@ -41,69 +42,82 @@ export function useAiChat() {
   }
 
   /**
-   * Membangun System Prompt dinamis berdasarkan data pengguna terkini
+   * Membangun System Prompt dinamis berdasarkan data pengguna terkini:
+   * "Kamu adalah PodoFriend, AI Companion pencegah burnout. Mood pengguna hari ini adalah [todayMood].
+   * Respons pengguna dengan gaya kepribadian yang [chatbot_personality]. Jawab singkat, empatik, dan suportif."
    */
   const buildSystemPrompt = (): string => {
     const userName = authStore.user?.name || 'Kawan'
-    const todayMood = surveyStore.todaySurvey?.mood || 'Belum diisi (Normal)'
-    const personality = preferencesStore.activePersonality
+    const todayMood = surveyStore.todaySurvey?.mood || 'Normal'
+    const personality =
+      (authStore.user as any)?.chatbot_personality ||
+      preferencesStore.activePersonality ||
+      'Empatik & Mendukung'
 
-    return `Kamu adalah PodoFriend, AI Companion pintar yang mendampingi sesi belajar dan mencegah burnout (Teknik Pomodoro).
-Nama pengguna yang kamu temani adalah: ${userName}.
-Kondisi mental dan mood pengguna hari ini: "${todayMood}".
-Gaya respon kepribadianmu: "${personality}".
+    return `Kamu adalah PodoFriend, AI Companion pencegah burnout. Mood pengguna hari ini adalah ${todayMood}. Respons pengguna dengan gaya kepribadian yang ${personality}. Jawab singkat, empatik, dan suportif.
 
-Pedoman penting responmu:
-1. Respon dalam bahasa Indonesia yang luwes, bersahabat, empatik, dan suportif.
-2. Jawab secara ringkas, to-the-point, dan berikan dorongan positif yang relevan dengan mood pengguna saat ini.
-3. Jika pengguna merasa lelah, stres, atau burnout, validasi perasaannya dan tawarkan tips jeda santai atau pernapasan 5 menit.
-4. Jika pengguna bersemangat, motivasi mereka untuk fokus pada blok waktu Pomodoro 25 menit.
-5. ATURAN MUTLAK: JANGAN PERNAH menyertakan karakter emoji apapun (seperti emotikon visual/simbol grafis) di dalam balasanmu. Gunakan teks murni yang hangat dan terstruktur.`
+Pedoman respons:
+1. Nama pengguna: ${userName}.
+2. Gunakan bahasa Indonesia yang luwes, bersahabat, dan menenangkan.
+3. Selalu prioritaskan kesehatan mental dan pencegahan burnout (dukung ritme Pomodoro: 25 menit fokus, 5 menit istirahat).
+4. Jangan gunakan emoji grafis atau emotikon visual apa pun di dalam jawaban. Gunakan kata-kata hangat dan terstruktur.`
   }
 
   /**
-   * Menyiapkan balasan fallback jika koneksi ke 9Router belum tersedia
+   * Menyiapkan balasan fallback jika koneksi ke 9Router / LLM Gateway terkendala
    */
   const getFallbackResponse = (userText: string): string => {
     const userName = authStore.user?.name || 'Kawan'
-    const todayMood = surveyStore.todaySurvey?.mood || 'Netral'
+    const todayMood = surveyStore.todaySurvey?.mood || 'Normal'
     const lower = userText.toLowerCase()
 
-    if (lower.includes('lelah') || lower.includes('capek') || lower.includes('burnout')) {
-      return `Halo ${userName}, Podo mendengar keluh kesahmu. Mood kamu hari ini tercatat "${todayMood}". Jangan memaksakan diri ya. Coba istirahat sejenak selama 5 menit, regangkan badan, dan minum air putih sebelum lanjut fokus.`
+    if (lower.includes('lelah') || lower.includes('capek') || lower.includes('burnout') || lower.includes('stres')) {
+      return `Halo ${userName}, Podo mendengar keluh kesahmu. Mengingat mood kamu hari ini adalah ${todayMood}, jangan memaksakan diri ya. Coba tarik napas dalam-dalam, regangkan badan selama 5 menit, dan minum air hangat sebelum kembali belajar.`
     }
 
     if (lower.includes('fokus') || lower.includes('semangat') || lower.includes('mulai')) {
-      return `Bagus sekali ${userName}! Ayo mulai sesi Pomodoro 25 menit sekarang. Podo akan menemanimu sampai bel istirahat berbunyi. Singkirkan distraksi dan fokus pada satu target dulu ya!`
+      return `Bagus sekali ${userName}! Ayo kita mulai sesi Pomodoro 25 menit sekarang. Podo akan mendampingimu agar tetap fokus tanpa merasa terbebani.`
     }
 
-    return `Halo ${userName}! Podo ada di sini untuk menemanimu belajar. Kondisi mood kamu hari ini adalah "${todayMood}". Mari atur ritme belajar yang sehat agar tidak burnout!`
+    return `Halo ${userName}! Podo siap mendampingimu belajar. Mood kamu hari ini adalah ${todayMood}. Jangan ragu untuk bercerita atau meminta tips fokus belajar ya!`
   }
 
   /**
-   * Mengirim pesan, menjalankan LangChain, dan menyinkronkan ke API backend
+   * Alur Pengiriman Pesan (Wajib Berurutan sesuai spesifikasi):
+   * 1. Cek Sesi: Jika activeSessionId null, jalankan createSession() terlebih dahulu.
+   * 2. Simpan User: Panggil saveMessage('user', isiPesan) ke backend. Tambahkan pesan ke UI lokal agar langsung muncul.
+   * 3. Loading: Set isLoading = true.
+   * 4. Generate AI: Lewatkan riwayat pesan (messages) beserta SystemMessage ke fungsi LangChain/9router.
+   * 5. Simpan AI: Setelah promise dari LangChain selesai, WAJIB panggil saveMessage('ai', responsAI) ke backend. Tambahkan respons ke UI lokal.
+   * 6. Selesai: Set isLoading = false.
    */
   const sendMessage = async (userText: string): Promise<void> => {
     const trimmed = userText.trim()
     if (!trimmed || chatStore.isLoading) return
 
-    // 1. Tambahkan pesan user ke state lokal seketika
+    // 1. Cek Sesi: Buat sesi baru jika belum ada sesi aktif
+    if (!chatStore.activeSessionId) {
+      const newSessionId = await chatStore.createSession()
+      if (!newSessionId) {
+        console.warn('Could not establish active session ID, continuing with local fallback')
+      }
+    }
+
+    // 2. Simpan User: Tampilkan ke UI lokal secara instan dan simpan ke backend
     chatStore.addUserMessage(trimmed)
+    await chatStore.saveMessage('user', trimmed)
 
-    // 2. Simpan pesan user ke backend secara asinkron (background)
-    chatStore.saveMessageToApi('user', trimmed)
-
-    // 3. Aktifkan indikator loading/typing
+    // 3. Loading: Aktifkan indikator berpikir AI
     chatStore.setLoading(true)
 
     try {
-      // 4. Siapkan riwayat pesan untuk konteks LangChain
+      // 4. Generate AI: Siapkan riwayat pesan & SystemMessage untuk LangChain
       const messagesPayload: BaseMessage[] = [
         new SystemMessage(buildSystemPrompt()),
       ]
 
-      // Ambil hingga 8 pesan terakhir agar konteks tetap terjaga
-      const recentHistory = chatStore.messages.slice(-9, -1)
+      // Ambil hingga 8 pesan percakapan sebelumnya untuk konteks memori
+      const recentHistory = chatStore.messages.slice(0, -1).slice(-8)
       for (const m of recentHistory) {
         if (m.sender === 'user') {
           messagesPayload.push(new HumanMessage(m.message))
@@ -111,10 +125,10 @@ Pedoman penting responmu:
           messagesPayload.push(new AIMessage(m.message))
         }
       }
-      // Tambahkan pesan terkini
+      // Tambahkan pesan user terkini
       messagesPayload.push(new HumanMessage(trimmed))
 
-      // 5. Panggil model LLM via LangChain
+      // Panggil model LangChain / 9Router
       let aiText = ''
       try {
         const model = getModel()
@@ -128,22 +142,20 @@ Pedoman penting responmu:
           '[9Router/LangChain] Could not reach AI Gateway. Using empathetic fallback:',
           llmErr
         )
-        // Simulasi delay mengetik halus untuk fallback
-        await new Promise((resolve) => setTimeout(resolve, 800))
+        await new Promise((resolve) => setTimeout(resolve, 600))
         aiText = getFallbackResponse(trimmed)
       }
 
-      // 6. Tambahkan pesan AI ke state lokal
+      // 5. Simpan AI: Simpan balasan AI ke backend agar memori sesi tidak hilang saat di-refresh, lalu masukkan ke UI lokal
+      await chatStore.saveMessage('ai', aiText)
       chatStore.addAiMessage(aiText)
-
-      // 7. Simpan pesan AI ke backend secara asinkron
-      chatStore.saveMessageToApi('ai', aiText)
     } catch (err: any) {
       console.error('Fatal error during chat processing:', err)
-      chatStore.addAiMessage(
-        'Maaf, terjadi sedikit kendala teknis saat memproses pesan. Mari coba lagi ya!'
-      )
+      const fallbackError = 'Maaf, terjadi sedikit kendala saat memproses pesan. Mari coba lagi ya!'
+      chatStore.addAiMessage(fallbackError)
+      await chatStore.saveMessage('ai', fallbackError)
     } finally {
+      // 6. Selesai: Matikan loading
       chatStore.setLoading(false)
     }
   }

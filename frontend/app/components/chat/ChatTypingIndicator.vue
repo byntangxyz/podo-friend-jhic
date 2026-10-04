@@ -9,7 +9,7 @@
 
     <!-- Typing Bubble -->
     <div
-      class="rounded-2xl rounded-tl-xs px-5 py-3.5 bg-white border border-orange-200/80 shadow-sm flex items-center gap-1.5"
+      class="rounded-2xl rounded-tl-xs px-5 py-3.5 bg-gray-100 border border-stone-200/80 shadow-sm flex items-center gap-1.5"
     >
       <span class="w-2 h-2 rounded-full bg-orange-500 animate-bounce" style="animation-delay: 0ms;" />
       <span class="w-2 h-2 rounded-full bg-orange-500 animate-bounce" style="animation-delay: 150ms;" />

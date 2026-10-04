@@ -25,7 +25,7 @@ const isUser = computed(() => props.message.sender === 'user')
     class="flex w-full mb-4 items-end gap-2.5 transition-all"
     :class="isUser ? 'justify-end' : 'justify-start'"
   >
-    <!-- Avatar Mascot for AI Message (Figma #60:1777 & #60:1828) -->
+    <!-- Avatar Mascot for AI Message (Wajib AppMascot berukuran kecil) -->
     <div
       v-if="!isUser"
       class="w-10 h-10 flex-shrink-0 flex items-center justify-center p-1 rounded-2xl bg-orange-100 border border-orange-200 select-none shadow-sm"
@@ -38,8 +38,8 @@ const isUser = computed(() => props.message.sender === 'user')
       class="max-w-[85%] sm:max-w-[75%] md:max-w-[68%] rounded-2xl px-5 py-3.5 shadow-sm transition-all"
       :class="
         isUser
-          ? 'bg-[#F56A16] text-white rounded-tr-xs'
-          : 'bg-white text-stone-900 border border-orange-200/80 rounded-tl-xs'
+          ? 'bg-orange-500 text-white rounded-tr-xs'
+          : 'bg-gray-100 text-stone-900 border border-stone-200/80 rounded-tl-xs'
       "
     >
       <!-- Message Content -->

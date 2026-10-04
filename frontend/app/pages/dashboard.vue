@@ -58,7 +58,7 @@ const moodBadgeInfo = computed(() => {
     <!-- Right-side Decorative Mascot Bar (Figma Frame 44:667) -->
     <!-- Higher z-index (z-30) to overlay elements below, clickable to navigate to /chat in Phase 3 -->
     <NuxtLink
-      to="/chat"
+      to="/chatbot"
       class="fixed right-0 top-20 bottom-0 w-[240px] xl:w-[320px] 2xl:w-[354px] z-30 hidden xl:flex items-center justify-end overflow-visible select-none group cursor-pointer transition-transform hover:scale-[1.02] active:scale-95"
       title="Ngobrol dengan Podo AI Companion (Phase 3)"
     >
