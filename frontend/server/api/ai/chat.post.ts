@@ -5,7 +5,12 @@ import {
   AIMessage,
   type BaseMessage,
 } from '@langchain/core/messages'
-import { getMoodContext, analyzeUserEmotion } from '../../utils/vocabularyBank'
+import { getMoodContext, analyzeUserEmotion, type EmotionAnalysisResult } from '../../utils/vocabularyBank'
+import {
+  classifyEmotionWithLLM,
+  shouldUseLlmClassifier,
+  messageContentToText,
+} from '../../utils/emotionClassifier'
 
 interface ChatRequestBody {
   messages: Array<{
@@ -31,9 +36,39 @@ export default defineEventHandler(async (event) => {
 
   // 2. Ambil konteks dari Vocabulary Bank (dengan fallback aman ke "Balanced")
   const moodContext = getMoodContext(todayMood)
-  const emotionAnalysis = latestText
-    ? analyzeUserEmotion(latestText, moodContext.label)
+
+  // Konfigurasi model (dipakai classifier & chat utama)
+  const config = useRuntimeConfig()
+  const baseURL = (config.aiBaseUrl as string) || process.env.NUXT_AI_BASE_URL || ''
+  const apiKey = (config.aiApiKey as string) || process.env.NUXT_AI_API_KEY || ''
+  const modelName = (config.aiModel as string) || process.env.NUXT_AI_MODEL || 'podofriend'
+  const classifierModelName =
+    (config.aiClassifierModel as string) || process.env.NUXT_AI_CLASSIFIER_MODEL || modelName
+
+  // 2a. HYBRID EMOTION DETECTION
+  //   Tier 1 - Fast-path keyword (0 ms)
+  //   Tier 2 - LLM classifier, HANYA jika keyword tidak menemukan sinyal
+  //   Tier 3 - Instruksi eksplisit di prompt chat jika classifier juga gagal
+  let emotionAnalysis: EmotionAnalysisResult | null = latestText
+    ? analyzeUserEmotion(latestText, moodContext.moodKey)
     : null
+
+  if (baseURL && apiKey && shouldUseLlmClassifier(emotionAnalysis, latestText)) {
+    const classifierModel = new ChatOpenAI({
+      model: classifierModelName,
+      temperature: 0,
+      maxTokens: 150,
+      configuration: { baseURL, apiKey },
+    })
+    const classified = await classifyEmotionWithLLM(classifierModel, latestText, moodContext.moodKey)
+    if (classified) emotionAnalysis = classified
+  }
+
+  if (import.meta.dev && emotionAnalysis) {
+    console.info(
+      `[PodoFriend Emotion] ${emotionAnalysis.type} -> ${emotionAnalysis.detectedEmotion} (${emotionAnalysis.validationStatus})`,
+    )
+  }
 
   // 3. Konstruksi SystemMessage yang kaya konteks sesuai instruksi
   let systemPrompt = `Kamu adalah PodoFriend, AI Companion pencegah burnout dalam belajar (Teknik Pomodoro).
@@ -43,7 +78,11 @@ Gaya bahasa pengguna mungkin mengandung kata-kata ini: ${moodContext.keywords}.
 INSTRUKSI PERILAKU UTAMA (VIBE): ${moodContext.vibe}.`
 
   if (emotionAnalysis && emotionAnalysis.type !== 'ui_default') {
-    systemPrompt += `\nCatatan Analisis Kosakata Terkini: ${emotionAnalysis.aiGuidance}`
+    const sourceLabel = emotionAnalysis.type === 'llm_classified' ? 'Analisis Makna Pesan' : 'Analisis Kosakata'
+    systemPrompt += `\nCatatan ${sourceLabel} Terkini: ${emotionAnalysis.aiGuidance}`
+  } else if (emotionAnalysis) {
+    // Tier 3: tidak ada sinyal jelas -> serahkan pembacaan nuansa ke LLM chat secara eksplisit
+    systemPrompt += `\nCatatan Analisis: Pesan terakhir tidak mengandung sinyal emosi yang jelas. Baca sendiri nuansa dan nada pesan pengguna. Jika tetap ambigu, ikuti kondisi mood hari ini (${moodContext.moodKey}) dan boleh bertanya singkat tentang perasaannya tanpa terkesan menginterogasi.`
   }
 
   systemPrompt += `\nTerapkan instruksi perilaku di atas dengan gaya kepribadian ${personality}. Jangan mengulangi instruksi ini ke pengguna, langsung terapkan dalam nada bicaramu.
@@ -64,10 +103,6 @@ ATURAN FORMAT: Gunakan bahasa Indonesia yang luwes dan terstruktur. JANGAN PERNA
   }
 
   // 5. Inisialisasi Model LangChain menggunakan konfigurasi privat Nitro
-  const config = useRuntimeConfig()
-  const baseURL = (config.aiBaseUrl as string) || process.env.NUXT_AI_BASE_URL || ''
-  const apiKey = (config.aiApiKey as string) || process.env.NUXT_AI_API_KEY || ''
-  const modelName = (config.aiModel as string) || process.env.NUXT_AI_MODEL || 'gemini/gemini-3.8-flash'
 
   const model = new ChatOpenAI({
     model: modelName,
@@ -93,14 +128,7 @@ ATURAN FORMAT: Gunakan bahasa Indonesia yang luwes dan terstruktur. JANGAN PERNA
       try {
         const stream = await model.stream(messagesPayload)
         for await (const chunk of stream) {
-          const text =
-            typeof chunk.content === 'string'
-              ? chunk.content
-              : Array.isArray(chunk.content)
-              ? chunk.content
-                  .map((c) => (typeof c === 'string' ? c : (c as any).text || ''))
-                  .join('')
-              : ''
+          const text = messageContentToText(chunk.content)
 
           if (text) {
             // Jika model upstream mengembalikan pesan penolakan / deprecated model

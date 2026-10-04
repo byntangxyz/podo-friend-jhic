@@ -16,7 +16,9 @@ export default defineNuxtConfig({
     // Private keys (hanya diakses di server Nitro Nuxt, aman dari browser)
     aiBaseUrl: process.env.NUXT_AI_BASE_URL || '',
     aiApiKey: process.env.NUXT_AI_API_KEY || '',
-    aiModel: process.env.NUXT_AI_MODEL || 'gemini/gemini-3.8-flash',
+    aiModel: process.env.NUXT_AI_MODEL || 'podofriend',
+    // Opsional: model khusus emotion classifier (fallback ke aiModel jika kosong)
+    aiClassifierModel: process.env.NUXT_AI_CLASSIFIER_MODEL || '',
 
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:8000',
