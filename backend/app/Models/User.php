@@ -7,6 +7,8 @@ use App\Models\ChatHistory;
 use App\Models\DailySurvey;
 use App\Models\GamificationStat;
 use App\Models\PomodoroSession;
+use App\Models\Task;
+use App\Models\UserAchievement;
 use App\Models\UserPreference;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -102,5 +104,21 @@ class User extends Authenticatable
     public function chatHistories(): HasMany
     {
         return $this->hasMany(ChatHistory::class);
+    }
+
+    /**
+     * Get the tasks for the user.
+     */
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(Task::class);
+    }
+
+    /**
+     * Get the achievements for the user.
+     */
+    public function achievements(): HasMany
+    {
+        return $this->hasMany(UserAchievement::class);
     }
 }

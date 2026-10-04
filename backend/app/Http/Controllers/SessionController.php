@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\CheckAndUnlockAchievementsAction;
 use App\Actions\UpdateGamificationStatsAction;
 use App\Http\Resources\GamificationStatResource;
 use App\Http\Resources\PomodoroSessionResource;
@@ -32,8 +33,12 @@ class SessionController extends Controller
     /**
      * Complete an existing Pomodoro session.
      */
-    public function complete(Request $request, string $id, UpdateGamificationStatsAction $gamificationAction): JsonResponse
-    {
+    public function complete(
+        Request $request,
+        string $id,
+        UpdateGamificationStatsAction $gamificationAction,
+        CheckAndUnlockAchievementsAction $achievementAction
+    ): JsonResponse {
         $session = PomodoroSession::find($id);
 
         if (! $session) {
@@ -76,6 +81,7 @@ class SessionController extends Controller
         ]);
 
         $stats = $gamificationAction->execute($request->user(), $durationMinutes);
+        $newlyUnlocked = $achievementAction->execute($request->user(), $stats);
 
         return response()->json([
             'status' => 'success',
@@ -83,6 +89,9 @@ class SessionController extends Controller
             'data' => [
                 'session' => new PomodoroSessionResource($session),
                 'gamification_stat' => new GamificationStatResource($stats),
+            ],
+            'meta' => [
+                'newly_unlocked_achievements' => $newlyUnlocked,
             ],
         ], 200);
     }

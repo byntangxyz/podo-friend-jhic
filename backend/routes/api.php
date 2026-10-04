@@ -1,11 +1,14 @@
 <?php
 
+use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ChatSessionController;
 use App\Http\Controllers\GamificationController;
 use App\Http\Controllers\PreferenceController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SurveyController;
+use App\Http\Controllers\TaskController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -27,6 +30,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('sessions')->group(function () {
         Route::post('/', [SessionController::class, 'start']);
         Route::put('/{id}', [SessionController::class, 'complete']);
+    });
+
+    // Daily Tasks (To-Do List)
+    Route::prefix('tasks')->group(function () {
+        Route::get('/', [TaskController::class, 'index']);
+        Route::post('/', [TaskController::class, 'store']);
+        Route::put('/{task}/toggle', [TaskController::class, 'toggle']);
+        Route::delete('/{task}', [TaskController::class, 'destroy']);
+    });
+
+    // Achievements
+    Route::get('/achievements', [AchievementController::class, 'index']);
+
+    // User Profile & Settings
+    Route::prefix('user')->group(function () {
+        Route::put('/profile', [ProfileController::class, 'updateProfile']);
+        Route::put('/password', [ProfileController::class, 'updatePassword']);
     });
 
     // Daily Surveys (Mood)
