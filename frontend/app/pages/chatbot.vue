@@ -224,7 +224,7 @@ const latestAiMessageId = computed(() => {
           v-if="chatStore.activeSessionId === null"
           class="h-full min-h-[360px] flex flex-col items-center justify-center text-center p-8 space-y-6 max-w-lg mx-auto"
         >
-          <div class="w-28 h-28 flex items-center justify-center p-3 rounded-3xl bg-orange-100 border-2 border-orange-300 shadow-md">
+          <div class="w-32 h-32 flex items-center justify-center p-3">
             <AppMascot size="lg" animation="idle" />
           </div>
           <div class="space-y-2">

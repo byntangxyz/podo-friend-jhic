@@ -15,11 +15,11 @@ const handleLogout = async () => {
       <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <!-- Logo -->
         <NuxtLink to="/" class="flex items-center gap-2 group">
-          <div class="w-9 h-9 rounded-2xl bg-orange-500 flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform">
-            <span class="text-xl font-black">P</span>
+          <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform">
+            <img src="/logo-podofriend.png" alt="">
           </div>
           <span class="font-extrabold text-xl text-stone-900 tracking-tight">
-            Podo<span class="text-orange-500">Friend</span>
+            Podo<span class="text-orange-500"> Friend</span>
           </span>
         </NuxtLink>
 
@@ -66,11 +66,7 @@ const handleLogout = async () => {
       <slot />
     </main>
 
-    <!-- Footer -->
-    <footer class="py-6 text-center text-xs text-stone-500 border-t border-orange-200/40">
-      <div class="max-w-6xl mx-auto px-4">
-        <p>© 2026 PodoFriend — Anti-Burnout Focus &amp; Study Companion.</p>
-      </div>
-    </footer>
+    <!-- App Footer (Soft Black Theme with JHIC Logos & Team Yogaruh) -->
+    <AppFooter />
   </div>
 </template>

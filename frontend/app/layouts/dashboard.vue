@@ -23,16 +23,14 @@ const navItems = [
       <div class="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
         <!-- Logo Brand -->
         <NuxtLink to="/dashboard" class="flex items-center gap-2.5 group">
-          <div class="w-10 h-10 rounded-2xl bg-orange-500 flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform">
-            <span class="text-xl font-black">P</span>
+          <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform">
+            <img src="/logo-podofriend.png" alt="">
           </div>
           <div class="flex flex-col">
-            <span class="font-extrabold text-xl text-stone-900 tracking-tight leading-none">
-              Podo<span class="text-orange-500">Friend</span>
+            <span class="font-bold text-2xl tracking-tight leading-none group-hover:scale-105">
+              Podo
             </span>
-            <span class="text-[10px] font-bold text-orange-600/80 uppercase tracking-wider mt-0.5">
-              Dashboard Belajar
-            </span>
+            
           </div>
         </NuxtLink>
 
@@ -53,7 +51,7 @@ const navItems = [
             :class="route.path === '/gamification/stats' ? 'bg-orange-500 text-white shadow-md' : 'text-stone-700 hover:text-orange-600 hover:bg-orange-100/60'"
           >
             <Icon name="lucide:flame" class="w-4 h-4" />
-            <span>Progress &amp; Gamifikasi</span>
+            <span>Progress</span>
           </NuxtLink>
 
           <NuxtLink
@@ -62,7 +60,7 @@ const navItems = [
             :class="route.path === '/chatbot' ? 'bg-orange-500 text-white shadow-md' : 'text-stone-600 hover:text-orange-600 hover:bg-orange-100/50'"
           >
             <Icon name="lucide:bot" class="w-4 h-4" />
-            <span>AI Chat</span>
+            <span>Chat Podo</span>
           </NuxtLink>
 
           <NuxtLink
@@ -111,6 +109,9 @@ const navItems = [
     <main class="flex-1 flex flex-col p-4 sm:p-6 lg:p-8 w-full max-w-[1700px]">
       <slot />
     </main>
+ 
+    <!-- App Footer (Soft Black Theme with JHIC Logos & Team Yogaruh) -->
+    <AppFooter />
 
     <!-- Bottom Navigation Bar for Mobile -->
     <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-orange-200 px-4 py-2 flex items-center justify-around shadow-lg">
