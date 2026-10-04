@@ -8,6 +8,7 @@ import type {
   SendMessagePayload,
   SendMessageResponse,
 } from '~/types/chat'
+import type { MascotAnimationState } from '~/types/mascot'
 import { useAuthStore } from '~/stores/auth'
 
 export const useChatStore = defineStore('chat', {
@@ -20,6 +21,7 @@ export const useChatStore = defineStore('chat', {
     isFetchingMessages: false,
     searchQuery: '',
     error: null as string | null,
+    mascotState: 'idle' as MascotAnimationState,
   }),
 
   getters: {
@@ -307,6 +309,10 @@ export const useChatStore = defineStore('chat', {
 
     setLoading(loading: boolean) {
       this.isLoading = loading
+    },
+
+    setMascotState(state: MascotAnimationState) {
+      this.mascotState = state
     },
 
     setSearchQuery(query: string) {

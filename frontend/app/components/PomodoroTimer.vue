@@ -80,6 +80,8 @@ const toggleTaskDrawer = () => {
   isTaskDrawerOpen.value = !isTaskDrawerOpen.value
 }
 
+import type { MascotAnimationState } from '~/types/mascot'
+
 // Dialog dialog kata-kata Podo
 const podoSpeech = computed(() => {
   if (timerStore.isRunning) {
@@ -92,6 +94,23 @@ const podoSpeech = computed(() => {
     return 'Timer dijeda. Siap melanjutkan fokus belajarmu lagi?'
   }
   return 'Halo aku Podo, Teman belajar kamu, Mulai!'
+})
+
+// State animasi maskot AI Companion berdasarkan aktivitas Pomodoro
+const companionMascotAnimation = computed<MascotAnimationState>(() => {
+  if (timerStore.isCompletedModalOpen) {
+    return 'excited'
+  }
+  if (timerStore.mode === 'break') {
+    return 'sleepy'
+  }
+  if (timerStore.isRunning) {
+    return 'listening'
+  }
+  if (timerStore.timeLeft < timerStore.totalDuration) {
+    return 'thinking'
+  }
+  return 'idle'
 })
 </script>
 
@@ -377,7 +396,11 @@ const podoSpeech = computed(() => {
         <!-- Mascot with Speech Bubble (Figma #44:672) -->
         <div class="mt-8 pt-6 border-t border-orange-100 w-full flex items-center justify-center gap-4 sm:gap-6">
           <div class="w-16 h-16 sm:w-24 sm:h-24 shrink-0 transition-transform hover:scale-105">
-            <AppMascot size="custom" custom-class="w-16 h-16 sm:w-24 sm:h-24" />
+            <AppMascot
+              size="custom"
+              custom-class="w-16 h-16 sm:w-24 sm:h-24"
+              :animation="companionMascotAnimation"
+            />
           </div>
 
           <!-- Speech bubble with arrow -->
@@ -410,8 +433,8 @@ const podoSpeech = computed(() => {
         <div
           class="bg-white rounded-3xl border-2 border-orange-400 p-8 max-w-md w-full shadow-2xl text-center relative overflow-hidden"
         >
-          <div class="w-20 h-20 mx-auto rounded-3xl bg-orange-100 flex items-center justify-center mb-4">
-            <Icon name="lucide:trophy" class="w-10 h-10 text-orange-500" />
+          <div class="w-24 h-24 mx-auto flex items-center justify-center mb-4">
+            <AppMascot size="lg" animation="excited" />
           </div>
 
           <h3 class="text-2xl font-black text-stone-900 mb-1">

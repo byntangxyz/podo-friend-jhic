@@ -3,9 +3,14 @@ import type { ChatMessage } from '~/types/chat'
 
 interface Props {
   message: ChatMessage
+  isLatestAi?: boolean
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  isLatestAi: false,
+})
+
+const chatStore = useChatStore()
 
 const formattedTime = computed(() => {
   if (!props.message.created_at) return ''
@@ -18,6 +23,16 @@ const formattedTime = computed(() => {
 })
 
 const isUser = computed(() => props.message.sender === 'user')
+
+const aiAvatarAnimation = computed(() => {
+  if (!props.message.message || chatStore.isLoading) {
+    return 'thinking'
+  }
+  if (chatStore.mascotState === 'excited') {
+    return 'excited'
+  }
+  return 'idle'
+})
 </script>
 
 <template>
@@ -25,12 +40,18 @@ const isUser = computed(() => props.message.sender === 'user')
     class="flex w-full mb-4 items-end gap-2.5 transition-all"
     :class="isUser ? 'justify-end' : 'justify-start'"
   >
-    <!-- Avatar Mascot for AI Message (Wajib AppMascot berukuran kecil) -->
+    <!-- Avatar Mascot for AI Message: HANYA untuk pesan AI terbaru agar layar hanya memuat 1 maskot di area chat -->
     <div
       v-if="!isUser"
-      class="w-10 h-10 flex-shrink-0 flex items-center justify-center p-1 rounded-2xl bg-orange-100 border border-orange-200 select-none shadow-sm"
+      class="w-16 h-16 flex-shrink-0 flex items-center justify-center p-1  select-none transition-all"
+      :class="isLatestAi ? '' : 'invisible pointer-events-none'"
     >
-      <AppMascot size="sm" />
+      <AppMascot
+        v-if="isLatestAi"
+        size="custom"
+        custom-class="w-16 h-16 sm:w-16 sm:h-16"
+        :animation="aiAvatarAnimation"
+      />
     </div>
 
     <!-- Bubble Container -->
@@ -62,12 +83,11 @@ const isUser = computed(() => props.message.sender === 'user')
 
       <!-- Timestamp -->
       <div
-        v-if="message.message && formattedTime"
-        class="mt-1.5 flex items-center gap-1 text-[10px]"
-        :class="isUser ? 'text-orange-100 justify-end' : 'text-stone-400 justify-start'"
+        v-if="formattedTime"
+        class="mt-1 text-[10px] text-right font-bold opacity-75"
+        :class="isUser ? 'text-white/80' : 'text-stone-500'"
       >
-        <Icon name="lucide:clock" class="w-3 h-3 opacity-70" />
-        <span>{{ formattedTime }}</span>
+        {{ formattedTime }}
       </div>
     </div>
   </div>

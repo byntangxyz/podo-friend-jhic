@@ -99,7 +99,7 @@ const handleLogin = async () => {
       <!-- Mascot Peek & Header -->
       <div class="text-center mb-6">
         <div class="inline-block relative">
-          <AppMascot size="md" />
+          <AppMascot size="md" :animation="isLoading ? 'thinking' : 'idle'" />
         </div>
         <h1 class="text-2xl sm:text-3xl font-black text-stone-900 mt-2">
           Selamat Datang <span class="text-orange-500">Kembali</span>

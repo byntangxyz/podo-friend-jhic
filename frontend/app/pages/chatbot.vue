@@ -81,6 +81,17 @@ const handleClosePersonality = () => {
 const handleOpenSurvey = () => {
   surveyStore.openModal()
 }
+
+// Menentukan ID pesan AI paling akhir/terbaru agar hanya 1 maskot yang muncul di area chat
+const latestAiMessageId = computed(() => {
+  const msgs = chatStore.filteredMessages
+  for (let i = msgs.length - 1; i >= 0; i--) {
+    if (msgs[i]?.sender === 'ai') {
+      return msgs[i]!.id
+    }
+  }
+  return null
+})
 </script>
 
 <template>
@@ -214,7 +225,7 @@ const handleOpenSurvey = () => {
           class="h-full min-h-[360px] flex flex-col items-center justify-center text-center p-8 space-y-6 max-w-lg mx-auto"
         >
           <div class="w-28 h-28 flex items-center justify-center p-3 rounded-3xl bg-orange-100 border-2 border-orange-300 shadow-md">
-            <AppMascot size="lg" />
+            <AppMascot size="lg" animation="idle" />
           </div>
           <div class="space-y-2">
             <h2 class="text-2xl font-black text-stone-900 tracking-tight">
@@ -240,7 +251,7 @@ const handleOpenSurvey = () => {
           class="h-full flex flex-col items-center justify-center text-center p-8 space-y-3"
         >
           <div class="w-16 h-16 flex items-center justify-center animate-pulse">
-            <AppMascot size="sm" />
+            <AppMascot size="sm" animation="searching" />
           </div>
           <p class="text-sm font-bold text-stone-600">
             Menghubungkan ke memori obrolan Podo...
@@ -254,7 +265,16 @@ const handleOpenSurvey = () => {
         >
           <!-- Mascot Greeting Frame -->
           <div class="w-24 h-24 flex items-center justify-center p-2 rounded-3xl bg-orange-100 border-2 border-orange-300 shadow-sm animate-bounce-short">
-            <AppMascot size="md" />
+            <AppMascot
+              size="md"
+              :animation="
+                chatStore.mascotState === 'thinking'
+                  ? 'thinking'
+                  : chatStore.mascotState === 'listening'
+                  ? 'listening'
+                  : 'excited'
+              "
+            />
           </div>
 
           <!-- Greeting Card -->
@@ -297,6 +317,7 @@ const handleOpenSurvey = () => {
             v-for="msg in chatStore.filteredMessages"
             :key="msg.id"
             :message="msg"
+            :is-latest-ai="msg.id === latestAiMessageId"
           />
 
           <!-- AI Typing Indicator: Hanya muncul jika pesan AI belum ditambahkan ke daftar pesan -->
