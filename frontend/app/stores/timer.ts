@@ -119,6 +119,19 @@ export const useTimerStore = defineStore('timer', {
           if (Array.isArray(newCodes) && newCodes.length > 0) {
             this.newlyUnlockedAchievements = newCodes
             this.isAchievementCelebrationOpen = true
+
+            // Trigger Toast Notification (Pencapaian Baru)
+            try {
+              const { showToast } = useToast()
+              const firstCode = newCodes[0] || ''
+              if (firstCode.includes('streak')) {
+                showToast('Kamu membuka Streak Belajar!')
+              } else {
+                showToast('Kamu membuka Pencapaian Baru!')
+              }
+            } catch (err) {
+              console.warn('Toast display skipped:', err)
+            }
           }
 
           // Update gamification stats & achievements
@@ -133,6 +146,11 @@ export const useTimerStore = defineStore('timer', {
 
       this.isCompletedModalOpen = true
       this.reset()
+    },
+
+    // Alias for completeSession per documentation convention
+    async stopSession() {
+      await this.completeSession()
     },
 
     closeCompletedModal() {

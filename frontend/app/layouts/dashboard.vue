@@ -41,7 +41,7 @@ const navItems = [
           <NuxtLink
             to="/dashboard"
             class="px-5 py-2 rounded-full text-sm font-extrabold transition-all flex items-center gap-2"
-            :class="route.path === '/dashboard' ? 'bg-orange-500 text-white shadow-md' : 'text-stone-700 hover:text-orange-600 hover:bg-orange-100/60'"
+            :class="(route.path === '/dashboard' || route.path === '/') ? 'bg-orange-500 text-white shadow-md' : 'text-stone-700 hover:text-orange-600 hover:bg-orange-100/60'"
           >
             <Icon name="lucide:timer" class="w-4 h-4" />
             <span>Timer</span>

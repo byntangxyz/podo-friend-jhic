@@ -13,4 +13,5 @@ useHead({
   <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>
+  <AppToast />
 </template>

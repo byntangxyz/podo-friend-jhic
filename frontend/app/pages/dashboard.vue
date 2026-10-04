@@ -145,9 +145,14 @@ const moodBadgeInfo = computed(() => {
       </div>
     </div>
 
-    <!-- Pomodoro Timer Interactive Stage (Faithfully replicating Figma Frame 44:667) -->
-    <div class="relative z-10">
-      <PomodoroTimer />
+    <!-- Main Desktop Side-by-Side: TaskList (Left) & PomodoroTimer (Center/Right) -->
+    <div class="w-full flex flex-col lg:flex-row items-start justify-start gap-6 lg:gap-8 relative z-10">
+      <div class="w-full lg:w-80 shrink-0">
+        <TaskList />
+      </div>
+      <div class="flex-1 w-full max-w-4xl">
+        <PomodoroTimer />
+      </div>
     </div>
 
     <!-- Mandatory Mood Survey Modal (Shows when todaySurvey is null) -->
