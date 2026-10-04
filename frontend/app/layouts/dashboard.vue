@@ -11,7 +11,7 @@ const handleLogout = async () => {
 const navItems = [
   { name: 'Timer Fokus', path: '/dashboard', icon: 'lucide:timer' },
   { name: 'Statistik & Progres', path: '/gamification/stats', icon: 'lucide:flame' },
-  { name: 'AI Companion', path: '/chat', icon: 'lucide:bot', badge: 'Soon' },
+  { name: 'AI Companion', path: '/chat', icon: 'lucide:bot' },
   { name: 'Pengaturan', path: '/settings', icon: 'lucide:settings', badge: 'Soon' },
 ]
 </script>
@@ -63,7 +63,6 @@ const navItems = [
           >
             <Icon name="lucide:bot" class="w-4 h-4" />
             <span>AI Chat</span>
-            <span class="text-[10px] bg-stone-200 text-stone-600 px-1.5 py-0.2 rounded-full font-bold">Phase 3</span>
           </NuxtLink>
         </nav>
 
