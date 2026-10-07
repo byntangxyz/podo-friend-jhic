@@ -89,17 +89,17 @@ const leaderboardItems = computed(() => gamificationStore.dailyLeaderboard)
       <div class="relative flex items-center justify-center shrink-0">
         <!-- Flame SVG Background -->
         <div
-          class="w-36 h-36 sm:w-44 sm:h-44 flex items-center justify-center transition-all"
-          :class="isStreakActive ? 'text-orange-500 animate-pulse' : 'text-stone-300'"
+          class="w-24 h-24 sm:w-40 sm:h-40 flex items-center justify-center transition-all"
+          :class="isStreakActive ? 'animate-pulse drop-shadow-[0_4px_12px_rgba(245,106,22,0.35)]' : 'opacity-40 grayscale'"
         >
-          <Icon
-            name="lucide:flame"
-            class="w-full h-full stroke-[1.5]"
-            :class="isStreakActive ? 'fill-orange-500' : 'fill-stone-200'"
+          <img
+            src="/FireStreak.svg"
+            alt="Fire Streak Icon"
+            class="w-full h-full object-contain"
           />
         </div>
         <!-- Streak text overlay -->
-        <div class="absolute inset-0 flex items-center justify-center pt-6">
+        <div class="absolute inset-0 flex items-center justify-center pt-10">
           <span
             class="text-4xl sm:text-6xl font-black drop-shadow-[0_2px_4px_rgba(255,255,255,0.8)]"
             :class="isStreakActive ? 'text-stone-900' : 'text-stone-600'"
