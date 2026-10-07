@@ -61,25 +61,8 @@ const moodBadgeInfo = computed(() => {
       v-if="authStore.isAuthenticated"
       class="relative w-full flex flex-col gap-6 overflow-x-clip xl:pr-[280px] 2xl:pr-[360px]"
     >
-      <!-- Right-side Decorative Mascot Bar (Figma Frame 44:667) -->
-      <NuxtLink
-        to="/chatbot"
-        class="fixed right-0 top-20 bottom-0 w-[240px] xl:w-[320px] 2xl:w-[354px] z-30 hidden xl:flex items-center justify-end overflow-visible select-none group cursor-pointer transition-transform hover:scale-[1.02] active:scale-95"
-        title="Ngobrol dengan Podo AI Companion"
-      >
-        <div
-          class="absolute right-48 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-stone-900/90 text-white text-xs font-extrabold px-3.5 py-2 rounded-2xl shadow-lg pointer-events-none whitespace-nowrap flex items-center gap-1.5"
-        >
-          <Icon name="lucide:message-circle" class="w-3.5 h-3.5 text-orange-400" />
-          <span>Tanya Podo AI</span>
-        </div>
-
-        <img
-          src="/pomodoro_right_bar.svg"
-          alt="Podo Mascot Background"
-          class="h-full max-h-[95vh] object-contain object-right drop-shadow-md transition-all group-hover:brightness-105"
-        />
-      </NuxtLink>
+      <!-- Right-side Reactive Interactive Mascot Bar -->
+      <SidebarMascot />
 
       <!-- Top Welcome & Mood Status Header -->
       <div
