@@ -13,13 +13,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Public Authentication Routes
-Route::prefix('auth')->group(function () {
+Route::prefix('auth')->middleware('throttle:auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
 });
 
 // Authenticated Routes
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
@@ -59,7 +59,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/chat-sessions', [ChatSessionController::class, 'index']);
     Route::get('/chat-sessions/{session_id}', [ChatSessionController::class, 'show']);
     Route::delete('/chat-sessions/{session_id}', [ChatSessionController::class, 'destroy']);
-    Route::post('/chat-sessions/{session_id}/messages', [ChatSessionController::class, 'storeMessage']);
+    Route::post('/chat-sessions/{session_id}/messages', [ChatSessionController::class, 'storeMessage'])
+        ->middleware('throttle:ai-chat');
     Route::get('/chat-sessions/{session_id}/messages', [ChatSessionController::class, 'showMessages']);
 
     // Data Retrieval (Gamification & Preferences)
