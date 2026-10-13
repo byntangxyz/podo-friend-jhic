@@ -24,6 +24,11 @@ const handleAddTask = async () => {
 const toggleTaskCompletion = async (taskId: string, event?: Event) => {
   if (event) event.stopPropagation()
   await taskStore.toggleTask(taskId)
+  const task = taskStore.tasks.find(t => t.id === taskId)
+  if (task && task.is_completed && timerStore.activeTask === task.title) {
+    const nextUncompleted = taskStore.tasks.find(t => !t.is_completed)
+    timerStore.setActiveTask(nextUncompleted ? nextUncompleted.title : '')
+  }
 }
 
 const deleteTask = async (taskId: string, event?: Event) => {
@@ -32,8 +37,22 @@ const deleteTask = async (taskId: string, event?: Event) => {
 }
 
 const selectTask = (taskTitle: string) => {
-  timerStore.setActiveTask(taskTitle)
+  const task = taskStore.tasks.find(t => t.title === taskTitle)
+  if (task?.is_completed) return
+
+  if (timerStore.activeTask === taskTitle) {
+    timerStore.setActiveTask('')
+  } else {
+    timerStore.setActiveTask(taskTitle)
+  }
 }
+
+const hasActiveTask = computed(() => {
+  if (!timerStore.activeTask || !timerStore.activeTask.trim() || timerStore.activeTask === 'Fokus Mandiri') {
+    return false
+  }
+  return taskStore.tasks.some(t => t.title === timerStore.activeTask && !t.is_completed)
+})
 </script>
 
 <template>
@@ -111,7 +130,7 @@ const selectTask = (taskTitle: string) => {
           v-for="t in taskStore.sortedTasks"
           :key="t.id"
           class="w-full p-2.5 rounded-2xl text-left transition-colors flex items-center justify-between gap-2.5 group cursor-pointer"
-          :class="timerStore.activeTask === t.title ? 'bg-orange-100/70 border border-orange-300' : 'hover:bg-orange-50/70'"
+          :class="timerStore.activeTask === t.title && !t.is_completed ? 'bg-orange-100/70 border border-orange-300' : 'hover:bg-orange-50/70'"
           @click="selectTask(t.title)"
         >
           <!-- Checkbox Completion -->
@@ -151,7 +170,10 @@ const selectTask = (taskTitle: string) => {
       </div>
 
       <!-- Active Task Indicator Footer -->
-      <div class="p-3 bg-orange-50/50 border-t border-orange-100 text-xs text-stone-600 flex items-center justify-between">
+      <div
+        v-if="hasActiveTask"
+        class="p-3 bg-orange-50/50 border-t border-orange-100 text-xs text-stone-600 flex items-center justify-between"
+      >
         <span class="font-medium">Fokus saat ini:</span>
         <span class="font-bold text-orange-600 truncate max-w-[150px]">{{ timerStore.activeTask }}</span>
       </div>

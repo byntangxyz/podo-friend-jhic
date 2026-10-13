@@ -97,37 +97,34 @@ const moodDisplayLabel = computed(() => {
               }}</span
               >
             </h1>
-            <p class="text-xs sm:text-sm text-stone-600 mt-1">
-              Podo selalu ada buat kamu.
-            </p>
           </div>
 
           <!-- Preferensi Belajar Widget (Sederhana & Bersih) -->
-          <div class="flex items-center gap-2.5">
+          <div class="flex items-center gap-2.5 shrink-0">
             <div
               v-if="surveyStore.todaySurvey"
-              class="flex items-center gap-3 px-3.5 py-2 rounded-2xl bg-white border border-stone-200/90 shadow-2xs text-left"
+              class="flex items-center gap-3 px-3.5 py-2 rounded-2xl bg-white border border-stone-200/90 shadow-2xs text-left shrink-0"
             >
               <div class="w-8 h-8 rounded-xl bg-orange-100 flex items-center justify-center shrink-0 text-orange-600">
                 <Icon name="lucide:sliders-horizontal" class="w-4 h-4" />
               </div>
-              <div class="flex flex-col">
-                <span class="text-[10px] font-bold text-stone-400 uppercase tracking-wider leading-none">
+              <div class="flex flex-col whitespace-nowrap">
+                <span class="text-[10px] font-bold text-stone-400 uppercase tracking-wider leading-none whitespace-nowrap">
                   Preferensi Belajar
                 </span>
-                <div class="flex items-center gap-1.5 mt-1">
-                  <span class="text-xs font-black text-stone-800">
-                    {{ timerStore.currentStudyConfig.label }} ({{ timerStore.currentStudyConfig.focusMinutes }}m)
+                <div class="flex items-center gap-1.5 mt-1 whitespace-nowrap">
+                  <span class="text-xs font-black text-stone-800 whitespace-nowrap">
+                    {{ timerStore.currentStudyConfig.label }}
                   </span>
-                  <span class="text-[10px] font-bold text-stone-400">•</span>
-                  <span class="text-xs font-semibold text-stone-600">
+                  <span class="text-[10px] font-bold text-stone-400 shrink-0">•</span>
+                  <span class="text-xs font-semibold text-stone-600 whitespace-nowrap">
                     {{ moodDisplayLabel }}
                   </span>
                 </div>
               </div>
               <button
                 type="button"
-                class="ml-1.5 px-2.5 py-1 rounded-lg text-xs font-extrabold text-orange-600 hover:bg-orange-50 transition-colors cursor-pointer"
+                class="ml-1.5 px-2.5 py-1 rounded-lg text-xs font-extrabold text-orange-600 hover:bg-orange-50 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
                 title="Ganti Preferensi Belajar"
                 @click="surveyStore.openModal"
               >

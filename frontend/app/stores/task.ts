@@ -167,8 +167,8 @@ export const useTaskStore = defineStore('task', {
 
       // Adjust active timer task if deleted task was active
       if (timerStore.activeTask === removedTask.title) {
-        const remainingFirst = this.tasks.find(t => !t.is_completed) || this.tasks[0]
-        timerStore.setActiveTask(remainingFirst ? remainingFirst.title : 'Fokus Mandiri')
+        const remainingFirst = this.tasks.find(t => !t.is_completed)
+        timerStore.setActiveTask(remainingFirst ? remainingFirst.title : '')
       }
 
       if (!authStore.isAuthenticated) {

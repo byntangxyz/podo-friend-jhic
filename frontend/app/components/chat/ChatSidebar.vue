@@ -1,69 +1,67 @@
 <script setup lang="ts">
-import { useChatStore } from '~/stores/chat'
-import { useAuthStore } from '~/stores/auth'
-import { usePreferencesStore } from '~/stores/preferences'
-import type { ChatSession } from '~/types/chat'
+import { useChatStore } from '~/stores/chat';
+import { useAuthStore } from '~/stores/auth';
+import type { ChatSession } from '~/types/chat';
 
 interface Props {
-  isOpenMobile?: boolean
+  isOpenMobile?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   isOpenMobile: false,
-})
+});
 
 const emit = defineEmits<{
-  (e: 'closeMobile'): void
-  (e: 'openPersonality'): void
-  (e: 'newChat'): void
-}>()
+  (e: 'closeMobile'): void;
+  (e: 'openPersonality'): void;
+  (e: 'newChat'): void;
+}>();
 
-const chatStore = useChatStore()
-const authStore = useAuthStore()
-const preferencesStore = usePreferencesStore()
+const chatStore = useChatStore();
+const authStore = useAuthStore();
 
-const showSearchInput = ref(false)
+const showSearchInput = ref(false);
 
 const handleNewChat = async () => {
-  await chatStore.createSession()
-  emit('newChat')
-  emit('closeMobile')
-}
+  await chatStore.createSession();
+  emit('newChat');
+  emit('closeMobile');
+};
 
 const handleSelectSession = async (session: ChatSession) => {
   if (String(chatStore.activeSessionId) === String(session.id)) {
-    emit('closeMobile')
-    return
+    emit('closeMobile');
+    return;
   }
-  await chatStore.fetchMessages(session.id)
-  emit('closeMobile')
-}
+  await chatStore.fetchMessages(session.id);
+  emit('closeMobile');
+};
 
 const toggleSearch = () => {
-  showSearchInput.value = !showSearchInput.value
+  showSearchInput.value = !showSearchInput.value;
   if (!showSearchInput.value) {
-    chatStore.setSearchQuery('')
+    chatStore.setSearchQuery('');
   }
-}
+};
 
 const formatSessionDate = (isoStr?: string) => {
-  if (!isoStr) return ''
+  if (!isoStr) return '';
   try {
-    const d = new Date(isoStr)
-    const now = new Date()
+    const d = new Date(isoStr);
+    const now = new Date();
     const isToday =
       d.getDate() === now.getDate() &&
       d.getMonth() === now.getMonth() &&
-      d.getFullYear() === now.getFullYear()
+      d.getFullYear() === now.getFullYear();
 
     if (isToday) {
-      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
-    return d.toLocaleDateString([], { day: 'numeric', month: 'short' })
+    return d.toLocaleDateString([], { day: 'numeric', month: 'short' });
   } catch {
-    return ''
+    return '';
   }
-}
+};
 </script>
 
 <template>
@@ -73,13 +71,20 @@ const formatSessionDate = (isoStr?: string) => {
     <!-- Top Area: Brand & Actions -->
     <div class="flex-1 flex flex-col min-h-0 space-y-5">
       <!-- Brand Header -->
-      <div class="flex items-center justify-between pb-2 border-b border-orange-300/60 flex-shrink-0">
+      <div
+        class="flex items-center justify-between pb-2 border-b border-orange-300/60 flex-shrink-0"
+      >
         <div class="flex items-center gap-3">
           <div class="w-14 h-14 flex items-center justify-center">
-            <AppMascot size="sm" :animation="chatStore.searchQuery ? 'searching' : 'idle'" />
+            <AppMascot
+              size="sm"
+              :animation="chatStore.searchQuery ? 'searching' : 'idle'"
+            />
           </div>
           <div>
-            <h1 class="text-2xl font-black text-stone-900 tracking-tight leading-none">
+            <h1
+              class="text-2xl font-black text-stone-900 tracking-tight leading-none"
+            >
               Podo AI
             </h1>
             <p class="text-xs font-bold text-orange-950/70 mt-1">
@@ -144,21 +149,6 @@ const formatSessionDate = (isoStr?: string) => {
             </button>
           </div>
         </div>
-
-        <!-- Button: Personalitas -->
-        <button
-          type="button"
-          class="w-full h-12 px-5 rounded-full bg-[#F56A16] hover:bg-orange-600 text-white font-bold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-between active:scale-95 cursor-pointer"
-          @click="emit('openPersonality')"
-        >
-          <div class="flex items-center gap-3">
-            <Icon name="lucide:sparkles" class="w-5 h-5 text-white" />
-            <span>Personalitas</span>
-          </div>
-          <span class="text-[11px] font-semibold bg-white/20 px-2 py-0.5 rounded-full truncate max-w-[110px]">
-            {{ preferencesStore.activePersonality }}
-          </span>
-        </button>
       </div>
 
       <!-- Section: Riwayat Sesi Obrolan -->
@@ -171,20 +161,72 @@ const formatSessionDate = (isoStr?: string) => {
             </span>
           </div>
           <span
-            v-if="chatStore.filteredSessions.length > 0"
+            v-if="
+              !chatStore.sessionsError &&
+              !chatStore.isFetchingSessions &&
+              chatStore.filteredSessions.length > 0
+            "
             class="text-[10px] font-extrabold uppercase px-2 py-0.5 bg-orange-200/80 rounded-full text-stone-800"
           >
             {{ chatStore.filteredSessions.length }} Sesi
           </span>
         </div>
 
-        <!-- Loading Sesi -->
+        <!-- Skeleton Loading Sesi -->
         <div
           v-if="chatStore.isFetchingSessions"
-          class="p-4 rounded-2xl bg-white/30 flex items-center justify-center gap-2 text-stone-700 text-xs font-semibold"
+          class="flex-1 overflow-y-auto space-y-2 pr-1"
+          role="status"
+          aria-label="Memuat riwayat sesi obrolan..."
         >
-          <Icon name="lucide:loader-2" class="w-4 h-4 animate-spin text-orange-600" />
-          <span>Memuat sesi...</span>
+          <div
+            v-for="i in 4"
+            :key="i"
+            class="w-full p-3 rounded-2xl bg-white/50 border border-orange-200/60 flex items-start gap-2.5 animate-pulse shadow-xs"
+          >
+            <!-- Skeleton Icon Sesi -->
+            <div class="w-7 h-7 rounded-xl bg-orange-200/70 shrink-0 mt-0.5" />
+
+            <!-- Skeleton Baris Teks -->
+            <div class="flex-1 min-w-0 space-y-2 pt-0.5">
+              <div class="flex items-center justify-between gap-2">
+                <div
+                  class="h-3 rounded-full bg-orange-200/80"
+                  :style="{ width: `${50 + (i % 3) * 15}%` }"
+                />
+                <div class="w-8 h-2.5 rounded-full bg-orange-200/50 shrink-0" />
+              </div>
+              <div
+                class="h-2.5 rounded-full bg-orange-200/50"
+                :style="{ width: `${75 - (i % 2) * 20}%` }"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Error State Sesi (Backend tidak tersedia / network error) -->
+        <div
+          v-else-if="chatStore.sessionsError"
+          class="p-4 rounded-2xl bg-rose-50/90 border border-rose-200 text-center space-y-2.5 flex-shrink-0 shadow-xs"
+        >
+          <div
+            class="w-10 h-10 rounded-2xl bg-rose-100 text-rose-500 flex items-center justify-center mx-auto shadow-xs"
+          >
+            <Icon name="lucide:cloud-off" class="w-5 h-5" />
+          </div>
+          <div class="space-y-1">
+            <p class="text-xs text-stone-900 font-extrabold">
+              Terjadi kesalahan pada server
+            </p>
+          </div>
+          <button
+            type="button"
+            class="px-3.5 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 active:scale-95 text-white text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 mx-auto cursor-pointer"
+            @click="chatStore.fetchSessions"
+          >
+            <Icon name="lucide:refresh-cw" class="w-3.5 h-3.5" />
+            <span>Coba Lagi</span>
+          </button>
         </div>
 
         <!-- Empty State Sesi -->
@@ -192,12 +234,23 @@ const formatSessionDate = (isoStr?: string) => {
           v-else-if="chatStore.filteredSessions.length === 0"
           class="p-4 rounded-2xl bg-white/40 border border-orange-300/40 text-center space-y-1.5 flex-shrink-0"
         >
-          <Icon name="lucide:message-square-dashed" class="w-6 h-6 text-stone-500 mx-auto" />
+          <Icon
+            name="lucide:message-square-dashed"
+            class="w-6 h-6 text-stone-500 mx-auto"
+          />
           <p class="text-xs text-stone-800 font-bold">
-            {{ chatStore.searchQuery ? 'Tidak ada sesi yang cocok' : 'Belum ada riwayat sesi' }}
+            {{
+              chatStore.searchQuery
+                ? 'Tidak ada sesi yang cocok'
+                : 'Belum ada riwayat sesi'
+            }}
           </p>
           <p class="text-[11px] text-stone-600">
-            {{ chatStore.searchQuery ? 'Coba gunakan kata kunci lain' : 'Klik "Chat Baru" untuk mulai berdiskusi dengan Podo' }}
+            {{
+              chatStore.searchQuery
+                ? 'Coba gunakan kata kunci lain'
+                : 'Klik "Chat Baru" untuk mulai berdiskusi dengan Podo'
+            }}
           </p>
         </div>
 
@@ -235,12 +288,18 @@ const formatSessionDate = (isoStr?: string) => {
               <div class="flex items-center justify-between gap-1">
                 <span
                   class="text-xs font-bold truncate"
-                  :class="String(chatStore.activeSessionId) === String(session.id) ? 'text-orange-950' : 'text-stone-900'"
+                  :class="
+                    String(chatStore.activeSessionId) === String(session.id)
+                      ? 'text-orange-950'
+                      : 'text-stone-900'
+                  "
                 >
                   {{ session.title || 'Sesi Obrolan' }}
                 </span>
                 <span class="text-[10px] text-stone-500 flex-shrink-0">
-                  {{ formatSessionDate(session.updated_at || session.created_at) }}
+                  {{
+                    formatSessionDate(session.updated_at || session.created_at)
+                  }}
                 </span>
               </div>
               <p class="text-[11px] text-stone-600 truncate mt-0.5">
@@ -255,8 +314,12 @@ const formatSessionDate = (isoStr?: string) => {
     <!-- Bottom Section: Akun & Pengaturan -->
     <div class="pt-4 border-t border-orange-300/60 space-y-2 flex-shrink-0">
       <!-- Akun Pengguna -->
-      <div class="flex items-center gap-3 p-2.5 rounded-2xl bg-white/40 border border-orange-300/40">
-        <div class="w-9 h-9 rounded-full bg-orange-500 text-white font-black text-sm flex items-center justify-center flex-shrink-0">
+      <div
+        class="flex items-center gap-3 p-2.5 rounded-2xl bg-white/40 border border-orange-300/40"
+      >
+        <div
+          class="w-9 h-9 rounded-full bg-orange-500 text-white font-black text-sm flex items-center justify-center flex-shrink-0"
+        >
           <Icon name="lucide:user" class="w-5 h-5 text-white" />
         </div>
         <div class="flex flex-col min-w-0">
@@ -275,7 +338,9 @@ const formatSessionDate = (isoStr?: string) => {
         class="w-full flex items-center gap-3 p-2.5 rounded-2xl bg-white/40 hover:bg-white text-stone-900 text-xs font-bold border border-orange-300/40 transition-colors cursor-pointer"
         @click="emit('openPersonality')"
       >
-        <div class="w-8 h-8 rounded-xl bg-stone-800 text-white flex items-center justify-center flex-shrink-0">
+        <div
+          class="w-8 h-8 rounded-xl bg-stone-800 text-white flex items-center justify-center flex-shrink-0"
+        >
           <Icon name="lucide:settings" class="w-4 h-4 text-white" />
         </div>
         <span>Pengaturan AI Podo</span>

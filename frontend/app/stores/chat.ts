@@ -18,6 +18,7 @@ export const useChatStore = defineStore('chat', {
     messages: [] as ChatMessage[],
     isLoading: false,
     isFetchingSessions: false,
+    sessionsError: null as string | null,
     isFetchingMessages: false,
     searchQuery: '',
     error: null as string | null,
@@ -69,6 +70,7 @@ export const useChatStore = defineStore('chat', {
       if (!authStore.isAuthenticated) return
 
       this.isFetchingSessions = true
+      this.sessionsError = null
       this.error = null
       try {
         const res = await useApiFetch<ChatSessionsResponse | ChatSession[]>(
@@ -86,7 +88,8 @@ export const useChatStore = defineStore('chat', {
         this.sessions = sessionList
       } catch (err: any) {
         console.error('Failed to fetch chat sessions:', err)
-        this.error = err.message || 'Gagal memuat riwayat sesi obrolan'
+        this.sessionsError = err?.data?.message || err?.message || 'Tidak dapat memuat riwayat obrolan'
+        this.error = this.sessionsError
       } finally {
         this.isFetchingSessions = false
       }

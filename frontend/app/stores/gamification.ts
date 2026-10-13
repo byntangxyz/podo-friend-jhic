@@ -127,7 +127,7 @@ export const useGamificationStore = defineStore('gamification', {
         let iconColor = 'text-stone-600'
         if (rank === 1) {
           bgClass = 'bg-orange-500/80 text-white'
-          iconColor = 'text-amber-300'
+          iconColor = 'text-amber-500 fill-amber-400'
         } else if (rank === 2) {
           bgClass = 'bg-orange-400/50 text-stone-900'
           iconColor = 'text-orange-600'

@@ -43,44 +43,6 @@ const leaderboardItems = computed(() => gamificationStore.dailyLeaderboard)
 
 <template>
   <div class="w-full flex flex-col gap-8 max-w-6xl mx-auto py-2">
-    <!-- User Profile Header Card (Figma #73:1964) -->
-    <div
-      class="bg-white rounded-3xl border border-stone-800 p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-sm"
-    >
-      <div class="flex items-center gap-5 sm:gap-6 text-center sm:text-left">
-        <!-- User Avatar Vector -->
-        <div
-          class="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-orange-100 border-2 border-orange-300 flex items-center justify-center shrink-0 shadow-xs"
-        >
-          <Icon name="lucide:user" class="w-12 h-12 text-stone-900" />
-        </div>
-
-        <div>
-          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100 text-orange-800 text-xs font-bold mb-1">
-            <Icon name="lucide:badge-check" class="w-4 h-4 text-orange-600" />
-            <span>Pelajar Aktif</span>
-          </div>
-          <h1 class="text-2xl sm:text-4xl font-extrabold text-stone-900 tracking-tight">
-            {{ authStore.user?.name || 'Pelajar Podo' }}
-          </h1>
-          <p class="text-xs sm:text-sm text-stone-500 mt-0.5">
-            {{ authStore.user?.email }}
-          </p>
-        </div>
-      </div>
-
-      <!-- Quick Actions / Navigation -->
-      <div class="flex items-center gap-3">
-        <NuxtLink
-          to="/dashboard"
-          class="px-5 py-3 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-extrabold text-sm shadow flex items-center gap-2 transition-transform hover:scale-105"
-        >
-          <Icon name="lucide:play" class="w-4 h-4 fill-white" />
-          <span>Lanjut Belajar</span>
-        </NuxtLink>
-      </div>
-    </div>
-
     <!-- Big Streak Banner Showcase (Figma #60:1658) -->
     <div
       class="bg-white rounded-3xl border border-stone-800 p-6 sm:p-10 flex flex-col md:flex-row items-center justify-between gap-8 shadow-md relative overflow-hidden"
@@ -161,9 +123,6 @@ const leaderboardItems = computed(() => gamificationStore.dailyLeaderboard)
           <h3 class="text-xl sm:text-2xl font-black text-stone-900">
             Personal Leaderboard (30 Hari)
           </h3>
-          <p class="text-xs text-stone-500 mt-1">
-            Daftar hari-hari paling produktifmu selama sebulan terakhir.
-          </p>
         </div>
 
         <!-- Leaderboard Rows (Figma #60:1861, #60:1878, #60:1893) -->
@@ -175,12 +134,14 @@ const leaderboardItems = computed(() => gamificationStore.dailyLeaderboard)
             :class="item.bgClass"
           >
             <!-- Rank / Trophy Icon -->
-            <div class="w-12 h-12 rounded-2xl bg-white/40 flex items-center justify-center shrink-0 font-black text-xl">
+            <div
+              class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 font-black text-xl shadow-xs"
+              :class="item.rank === 1 ? 'bg-white ring-2 ring-amber-400/40 shadow-sm' : 'bg-white/80'"
+            >
               <Icon
                 v-if="item.isTrophy"
                 name="lucide:trophy"
-                class="w-7 h-7"
-                :class="item.iconColor"
+                class="w-7 h-7 text-amber-500 fill-amber-400"
               />
               <span v-else :class="item.iconColor">{{ item.rank }}</span>
             </div>
@@ -219,9 +180,6 @@ const leaderboardItems = computed(() => gamificationStore.dailyLeaderboard)
           </div>
           <p class="font-extrabold text-stone-800 text-base">
             Belum Ada Riwayat Sesi
-          </p>
-          <p class="text-xs text-stone-500 max-w-sm">
-            Yuk selesaikan sesi Pomodoromu! Catatan hari-hari paling produktif akan muncul di sini.
           </p>
         </div>
 

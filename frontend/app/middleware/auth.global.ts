@@ -9,8 +9,8 @@ export default defineNuxtRouteMiddleware((to) => {
     return navigateTo('/login')
   }
 
-  // 2. Pengguna sudah memiliki token dan mencoba mengakses rute auth (/login atau /register)
-  if (authStore.isAuthenticated && (to.path === '/login' || to.path === '/register')) {
+  // 2. Pengguna sudah memiliki token dan mencoba mengakses rute auth atau landing page (/login, /register, atau /)
+  if (authStore.isAuthenticated && (to.path === '/' || to.path === '/login' || to.path === '/register')) {
     return navigateTo('/dashboard')
   }
 })

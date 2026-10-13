@@ -206,7 +206,7 @@ export const useTimerStore = defineStore('timer', {
       isRunning: false,
       currentSessionId: null as string | null,
       mode: 'work' as 'work' | 'break',
-      activeTask: 'Belajar Python',
+      activeTask: '',
       isLoadingSession: false,
       timerIntervalId: null as ReturnType<typeof setInterval> | null,
       isCompletedModalOpen: false,
