@@ -42,14 +42,184 @@ const companionMascotAnimation = computed<MascotAnimationState>(() => {
   }
   return 'idle'
 })
+
+// Picture-in-Picture (Floating Window) Logic
+let pipWindowInstance: any = null
+const isFloatingActive = ref(false)
+const isNativePip = ref(false)
+const cardHostRef = ref<HTMLElement | null>(null)
+const cardRef = ref<HTMLElement | null>(null)
+
+const copyStylesToPip = (pipDoc: Document) => {
+  document.querySelectorAll('link[rel="stylesheet"], style').forEach((node) => {
+    pipDoc.head.appendChild(node.cloneNode(true))
+  })
+  if (pipDoc.body) {
+    pipDoc.body.style.margin = '0'
+    pipDoc.body.style.padding = '16px'
+    pipDoc.body.style.boxSizing = 'border-box'
+    pipDoc.body.style.backgroundColor = '#FFF7ED'
+    pipDoc.body.style.fontFamily = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+    pipDoc.body.style.display = 'flex'
+    pipDoc.body.style.alignItems = 'center'
+    pipDoc.body.style.justifyContent = 'center'
+    pipDoc.body.style.minHeight = '100vh'
+  }
+}
+
+const openNativePip = async (): Promise<boolean> => {
+  if (typeof window === 'undefined' || !('documentPictureInPicture' in window)) {
+    return false
+  }
+
+  try {
+    const pipWin = await (window as any).documentPictureInPicture.requestWindow({
+      width: 520,
+      height: 500,
+    })
+
+    pipWindowInstance = pipWin
+    copyStylesToPip(pipWin.document)
+
+    isFloatingActive.value = true
+    isNativePip.value = true
+    await nextTick()
+
+    if (cardRef.value) {
+      pipWin.document.body.appendChild(cardRef.value)
+    }
+
+    pipWin.addEventListener('pagehide', () => {
+      if (cardHostRef.value && cardRef.value) {
+        cardHostRef.value.appendChild(cardRef.value)
+      }
+      pipWindowInstance = null
+      isNativePip.value = false
+      isFloatingActive.value = false
+    })
+
+    return true
+  } catch (err) {
+    console.warn('Document PiP request failed:', err)
+    return false
+  }
+}
+
+const closeFloating = () => {
+  if (pipWindowInstance) {
+    if (cardHostRef.value && cardRef.value) {
+      cardHostRef.value.appendChild(cardRef.value)
+    }
+    try {
+      pipWindowInstance.close()
+    } catch {}
+    pipWindowInstance = null
+  } else if (cardHostRef.value && cardRef.value && cardRef.value.parentElement !== cardHostRef.value) {
+    cardHostRef.value.appendChild(cardRef.value)
+  }
+  isNativePip.value = false
+  isFloatingActive.value = false
+}
+
+const togglePictureInPicture = async () => {
+  if (isFloatingActive.value) {
+    closeFloating()
+    return
+  }
+
+  // Coba Document Picture-in-Picture API (OS-level always-on-top window) terlebih dahulu
+  if (typeof window !== 'undefined' && 'documentPictureInPicture' in window) {
+    const success = await openNativePip()
+    if (success) return
+  }
+
+  // Fallback: In-page pinned floating card
+  isNativePip.value = false
+  isFloatingActive.value = true
+}
+
+const handleCompleteSession = async () => {
+  if (isFloatingActive.value) {
+    closeFloating()
+  }
+  await timerStore.completeSession()
+}
+
+// Tutup floating window secara otomatis saat sesi berakhir
+watch(
+  () => timerStore.isCompletedModalOpen,
+  (isOpen) => {
+    if (isOpen) {
+      closeFloating()
+    }
+  }
+)
+
+onUnmounted(() => {
+  closeFloating()
+})
 </script>
 
 <template>
   <div class="relative w-full flex flex-col items-center">
-    <!-- Center Timer Stage (Compact Sizing agar AI Companion terlihat tanpa scroll) -->
+    <!-- Placeholder di halaman saat kartu sedang mengambang (Floating / PiP) -->
     <div
-      class="w-full max-w-4xl flex flex-col items-center justify-center bg-white rounded-3xl border-2 border-orange-400 p-5 sm:p-7 shadow-lg relative overflow-hidden"
+      v-if="isFloatingActive"
+      class="w-full max-w-4xl flex flex-col items-center justify-center bg-white/70 backdrop-blur-md rounded-3xl border-2 border-dashed border-orange-300 p-8 sm:p-12 text-center gap-4 transition-all mb-6"
     >
+      <div class="w-16 h-16 rounded-3xl bg-orange-100 flex items-center justify-center text-orange-500 shadow-xs">
+        <Icon name="lucide:picture-in-picture-2" class="w-8 h-8" />
+      </div>
+      <div>
+        <h3 class="text-xl font-black text-stone-900">
+          Timer Sedang Melayang (Floating Window)
+        </h3>
+        <p class="text-sm font-semibold text-stone-600 mt-1 max-w-md">
+          Sesi timer Pomodoro sedang aktif pada jendela mengambang. Kamu dapat mengontrol timer dan menyelesaikan sesi di jendela tersebut.
+        </p>
+      </div>
+      <button
+        type="button"
+        class="px-5 py-2.5 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-extrabold text-sm shadow-md transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+        @click="closeFloating"
+      >
+        <Icon name="lucide:arrow-down-left" class="w-4 h-4" />
+        <span>Kembalikan Timer ke Halaman</span>
+      </button>
+    </div>
+
+    <!-- Host Container untuk Card Pomodoro Timer -->
+    <div ref="cardHostRef" class="w-full flex justify-center">
+      <!-- Main Pomodoro Card (Card yang di-float secara utuh) -->
+      <div
+        ref="cardRef"
+        class="w-full flex flex-col items-center justify-center bg-white rounded-3xl border-2 border-orange-400 p-5 sm:p-7 shadow-lg relative overflow-hidden transition-all duration-300"
+        :class="[
+          isFloatingActive && !isNativePip
+            ? 'fixed bottom-6 right-6 z-50 w-[420px] max-w-[calc(100vw-2rem)] shadow-2xl border-orange-500 bg-white'
+            : 'max-w-4xl'
+        ]"
+      >
+        <!-- Picture-in-Picture / Floating Window Button -->
+      <button
+        type="button"
+        class="absolute top-4 right-4 sm:top-5 sm:right-5 px-3 py-1.5 rounded-xl border transition-all flex items-center gap-1.5 text-xs font-bold shadow-2xs cursor-pointer z-10"
+        :class="
+          isFloatingActive
+            ? 'bg-orange-500 text-white border-orange-600 hover:bg-orange-600'
+            : 'bg-orange-50 hover:bg-orange-100 text-stone-700 hover:text-orange-600 border-orange-200'
+        "
+        :title="isFloatingActive ? 'Tutup Floating Window' : 'Buka Picture-in-Picture (Floating Window)'"
+        @click="togglePictureInPicture"
+      >
+        <Icon
+          name="lucide:picture-in-picture-2"
+          class="w-4 h-4"
+          :class="isFloatingActive ? 'text-white' : 'text-orange-500'"
+        />
+        <span class="hidden sm:inline">{{ isFloatingActive ? 'Tutup PiP' : 'Floating Timer' }}</span>
+      </button>
+
       <!-- Mode Switcher (Work vs Break) -->
       <div class="flex items-center gap-2 p-1.5 rounded-2xl bg-orange-100/80 mb-3 sm:mb-4">
         <button
@@ -139,7 +309,7 @@ const companionMascotAnimation = computed<MascotAnimationState>(() => {
         <button
           type="button"
           class="w-full py-2.5 sm:py-3 px-5 rounded-2xl bg-[#FFC9A8] hover:bg-[#ffb68c] active:scale-[0.98] border border-orange-300 text-[#7D614F] font-black text-base sm:text-lg shadow-[0_3px_0_0_rgba(0,0,0,0.12)] flex items-center justify-center gap-2.5 transition-all cursor-pointer"
-          @click="timerStore.completeSession"
+          @click="handleCompleteSession"
         >
           <Icon name="lucide:check-circle" class="w-5 h-5 text-[#7D614F]" />
           <span>Selesaikan Sesi</span>
@@ -167,6 +337,7 @@ const companionMascotAnimation = computed<MascotAnimationState>(() => {
         </div>
       </div>
     </div>
+  </div>
 
     <!-- Session Completed Celebration Modal (Pop-up UI dengan Mascot Besar & Matikan Alarm) -->
     <Transition
