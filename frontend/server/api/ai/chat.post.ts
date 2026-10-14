@@ -6,11 +6,11 @@ import {
   type BaseMessage,
 } from '@langchain/core/messages'
 import { getMoodContext, analyzeUserEmotion, type EmotionAnalysisResult } from '../../utils/vocabularyBank'
+import { messageContentToText } from '../../utils/emotionClassifier'
 import {
-  classifyEmotionWithLLM,
-  shouldUseLlmClassifier,
-  messageContentToText,
-} from '../../utils/emotionClassifier'
+  buildSystemPrompt,
+  buildChatHistory,
+} from '../../utils/promptBuilder'
 
 interface ChatRequestBody {
   messages: Array<{
@@ -20,6 +20,10 @@ interface ChatRequestBody {
   todayMood?: string | null
   chatbotPersonality?: string
   userName?: string
+  studyMode?: string | null
+  activeTask?: string | null
+  userTasks?: string[] | null
+  taskSummary?: string | null
 }
 
 export default defineEventHandler(async (event) => {
@@ -29,6 +33,10 @@ export default defineEventHandler(async (event) => {
   const todayMood = body?.todayMood || null
   const personality = body?.chatbotPersonality || 'Empatik & Mendukung'
   const userName = body?.userName || 'Kawan'
+  const studyMode = body?.studyMode || null
+  const activeTask = body?.activeTask || null
+  const userTasks = body?.userTasks || null
+  const taskSummary = body?.taskSummary || null
 
   // Cari teks user terakhir untuk analisis emosi
   const lastUserMsg = [...incomingMessages].reverse().find((m) => m.sender === 'user')
@@ -45,24 +53,11 @@ export default defineEventHandler(async (event) => {
   const classifierModelName =
     (config.aiClassifierModel as string) || process.env.NUXT_AI_CLASSIFIER_MODEL || modelName
 
-  // 2a. HYBRID EMOTION DETECTION
-  //   Tier 1 - Fast-path keyword (0 ms)
-  //   Tier 2 - LLM classifier, HANYA jika keyword tidak menemukan sinyal
-  //   Tier 3 - Instruksi eksplisit di prompt chat jika classifier juga gagal
-  let emotionAnalysis: EmotionAnalysisResult | null = latestText
+  // 2a. EMOTION DETECTION: Menggunakan Vocabulary Bank (2.500 keyword terkurasi)
+  // Tidak memanggil LLM classifier terpisah untuk menghemat kuota & mencegah 503/400 gateway 9Router
+  const emotionAnalysis: EmotionAnalysisResult | null = latestText
     ? analyzeUserEmotion(latestText, moodContext.moodKey)
     : null
-
-  if (baseURL && apiKey && shouldUseLlmClassifier(emotionAnalysis, latestText)) {
-    const classifierModel = new ChatOpenAI({
-      model: classifierModelName,
-      temperature: 0,
-      maxTokens: 150,
-      configuration: { baseURL, apiKey },
-    })
-    const classified = await classifyEmotionWithLLM(classifierModel, latestText, moodContext.moodKey)
-    if (classified) emotionAnalysis = classified
-  }
 
   if (import.meta.dev && emotionAnalysis) {
     console.info(
@@ -70,51 +65,26 @@ export default defineEventHandler(async (event) => {
     )
   }
 
-  // 3. Konstruksi SystemMessage yang kaya konteks sesuai instruksi
-  let systemPrompt = `Kamu adalah PodoFriend, AI Companion pencegah burnout dalam belajar (Teknik Pomodoro).
-Nama pengguna: ${userName}.
-Kondisi pengguna hari ini: ${moodContext.label}.
-Gaya bahasa pengguna mungkin mengandung kata-kata ini: ${moodContext.keywords}.
-INSTRUKSI PERILAKU UTAMA (VIBE): ${moodContext.vibe}.`
-
-  if (emotionAnalysis && emotionAnalysis.type !== 'ui_default') {
-    const sourceLabel = emotionAnalysis.type === 'llm_classified' ? 'Analisis Makna Pesan' : 'Analisis Kosakata'
-    systemPrompt += `\nCatatan ${sourceLabel} Terkini: ${emotionAnalysis.aiGuidance}`
-  } else if (emotionAnalysis) {
-    // Tier 3: tidak ada sinyal jelas -> serahkan pembacaan nuansa ke LLM chat secara eksplisit
-    systemPrompt += `\nCatatan Analisis: Pesan terakhir tidak mengandung sinyal emosi yang jelas. Baca sendiri nuansa dan nada pesan pengguna. Jika tetap ambigu, ikuti kondisi mood hari ini (${moodContext.moodKey}) dan boleh bertanya singkat tentang perasaannya tanpa terkesan menginterogasi.`
-  }
-
-  systemPrompt += `\nTerapkan instruksi perilaku di atas dengan gaya kepribadian ${personality}. Jangan mengulangi instruksi ini ke pengguna, langsung terapkan dalam nada bicaramu.
-Jawab singkat, empatik, dan suportif.
-ATURAN FORMAT: Gunakan bahasa Indonesia yang luwes dan terstruktur. JANGAN PERNAH menyertakan karakter emoji apa pun dalam balasanmu.`
-
-  // 4. Susun pesan riwayat LangChain
-  const messagesPayload: BaseMessage[] = [new SystemMessage(systemPrompt)]
-
-  // Ambil hingga 8 pesan riwayat terakhir agar konteks memori tetap tajam
-  const historySlice = incomingMessages.slice(-8)
-  for (const m of historySlice) {
-    if (m.sender === 'user') {
-      messagesPayload.push(new HumanMessage(m.message))
-    } else {
-      messagesPayload.push(new AIMessage(m.message))
-    }
-  }
-
-  // 5. Inisialisasi Model LangChain menggunakan konfigurasi privat Nitro
-
-  const model = new ChatOpenAI({
-    model: modelName,
-    temperature: 0.7,
-    maxTokens: 600,
-    configuration: {
-      baseURL,
-      apiKey,
-    },
+  // 3. Konstruksi SystemMessage yang kaya konteks sesuai modul promptBuilder
+  const systemPrompt = buildSystemPrompt({
+    userName,
+    todayMood,
+    moodContext,
+    personality,
+    studyMode,
+    activeTask,
+    userTasks,
+    taskSummary,
+    emotionAnalysis,
   })
 
-  // 6. Header streaming untuk respon teks bertahap
+  // 4. Susun pesan riwayat LangChain (hingga 12 pesan terakhir untuk sliding window yang tajam)
+  const messagesPayload: BaseMessage[] = [
+    new SystemMessage(systemPrompt),
+    ...buildChatHistory(incomingMessages, 12),
+  ]
+
+  // 5. Header streaming untuk respon teks bertahap
   setHeader(event, 'Content-Type', 'text/plain; charset=utf-8')
   setHeader(event, 'Transfer-Encoding', 'chunked')
   setHeader(event, 'Cache-Control', 'no-cache, no-transform')
@@ -122,27 +92,67 @@ ATURAN FORMAT: Gunakan bahasa Indonesia yang luwes dan terstruktur. JANGAN PERNA
 
   const textEncoder = new TextEncoder()
 
-  // 7. Buat ReadableStream dan alirkan chunk data ke frontend
+  // 6. Buat ReadableStream dengan Multi-Model Fallback & Auto-Retry
   const readableStream = new ReadableStream({
     async start(controller) {
-      try {
-        const stream = await model.stream(messagesPayload)
-        for await (const chunk of stream) {
-          const text = messageContentToText(chunk.content)
+      // Daftar kandidat model jika podofriend terkena rotasi upstream unavailable / 503
+      const candidateModels = [modelName, 'ag/gpt-oss-120b-medium', 'ag/gemini-3.8-flash']
+      let streamStarted = false
 
-          if (text) {
-            // Jika model upstream mengembalikan pesan penolakan / deprecated model
-            if (text.includes('is no longer available') || text.includes('no longer available')) {
-              throw new Error(`Upstream model error: ${text}`)
+      for (const currentModel of candidateModels) {
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          try {
+            const aiClient = new ChatOpenAI({
+              model: currentModel,
+              temperature: 0.7,
+              maxTokens: 600,
+              configuration: {
+                baseURL,
+                apiKey,
+              },
+            })
+
+            const stream = await aiClient.stream(messagesPayload)
+            for await (const chunk of stream) {
+              const text = messageContentToText(chunk.content)
+
+              if (text) {
+                // Jika model upstream mengembalikan pesan penolakan / error gateway
+                if (
+                  text.includes('is no longer available') ||
+                  text.includes('Model is unavailable') ||
+                  text.includes('Service temporarily overloaded')
+                ) {
+                  throw new Error(`Upstream model error: ${text}`)
+                }
+                streamStarted = true
+                controller.enqueue(textEncoder.encode(text))
+              }
             }
-            controller.enqueue(textEncoder.encode(text))
+
+            // Jika streaming berhasil sampai akhir, tutup stream dan selesai
+            controller.close()
+            return
+          } catch (err) {
+            console.warn(
+              `[Nitro AI Stream] Error on ${currentModel} (attempt ${attempt}):`,
+              (err as Error)?.message || err,
+            )
+            // Jika chunk sudah sempat terkirim ke klien, jangan coba model lain agar tidak duplikasi teks
+            if (streamStarted) {
+              controller.close()
+              return
+            }
+            // Jeda 500ms sebelum retry berikutnya
+            await new Promise((r) => setTimeout(r, 500))
           }
         }
-      } catch (err) {
-        console.warn('[Nitro AI Stream] LangChain streaming error, using empathetic fallback:', err)
-        // Fallback dinamis jika 9Router sedang tidak dapat dijangkau
+      }
+
+      // Jika seluruh model & retry gagal, tampilkan fallback teks ramah
+      try {
+        console.warn('[Nitro AI Stream] All candidate models exhausted, using empathetic fallback')
         const fallbackText = getFallbackText(userName, moodContext.label, latestText)
-        // Kirim fallback dengan sedikit jeda simulasi per kata
         const words = fallbackText.split(' ')
         for (const word of words) {
           controller.enqueue(textEncoder.encode(word + ' '))
@@ -160,10 +170,10 @@ ATURAN FORMAT: Gunakan bahasa Indonesia yang luwes dan terstruktur. JANGAN PERNA
 function getFallbackText(userName: string, moodLabel: string, userText: string): string {
   const lower = userText.toLowerCase()
   if (lower.includes('lelah') || lower.includes('capek') || lower.includes('burnout')) {
-    return `Halo ${userName}, Podo mendengar keluh kesahmu. Mood kamu tercatat "${moodLabel}". Jangan memaksakan diri ya. Coba tarik napas dalam-dalam, istirahat sejenak 5 menit, dan minum air putih hangat sebelum lanjut belajar.`
+    return `Podo mendengar keluh kesahmu, ${userName}. Jangan paksakan diri ya. Ambil jeda sejenak 5 menit, tarik napas dalam-dalam, dan minum air putih dulu. Podo selalu ada di sini.`
   }
   if (lower.includes('fokus') || lower.includes('semangat') || lower.includes('mulai')) {
-    return `Bagus sekali ${userName}! Ayo mulai sesi Pomodoro 25 menit sekarang. Podo akan mendampingimu agar tetap fokus tanpa merasa terbebani.`
+    return `Semangatmu luar biasa, ${userName}! Server AI Podo sedang sedikit padat, tapi kamu bisa langsung mulai sesi timer Pomodoro di dashboard sekarang. Podo tetap mendampingimu!`
   }
-  return `Halo ${userName}! Podo siap mendampingimu belajar. Kondisi kamu saat ini adalah "${moodLabel}". Jangan ragu untuk berbagi cerita atau meminta tips agar ritme belajarmu tetap seimbang.`
+  return `Maaf ${userName}, koneksi Podo ke server AI sedang mengalami lonjakan antrean sesaat. Tapi Podo tetap di sini menemani belajarmu. Coba kirim ulang pesanmu dalam beberapa detik ya!`
 }

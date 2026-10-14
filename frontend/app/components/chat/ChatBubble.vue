@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { ChatMessage } from '~/types/chat'
 
+import { parseChatAction } from '~/utils/chatActions'
+import ChatActionCard from './ChatActionCard.vue'
+
 interface Props {
   message: ChatMessage
   isLatestAi?: boolean
@@ -11,6 +14,10 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const chatStore = useChatStore()
+
+const parsedMessage = computed(() => {
+  return parseChatAction(props.message.message)
+})
 
 const formattedTime = computed(() => {
   if (!props.message.created_at) return ''
@@ -65,15 +72,24 @@ const aiAvatarAnimation = computed(() => {
     >
       <!-- Message Content (Jika sudah ada teks) -->
       <div
-        v-if="message.message"
+        v-if="parsedMessage.cleanText"
         class="text-sm sm:text-base leading-relaxed whitespace-pre-wrap break-words font-medium"
       >
-        {{ message.message }}
+        {{ parsedMessage.cleanText }}
       </div>
 
-      <!-- Typing Indicator In-Place (Saat AI sedang berpikir sebelum chunk pertama masuk) -->
+      <!-- Action Cards interaktif jika AI menyertakan aksi terstruktur (bisa lebih dari satu, misal: mode + task) -->
+      <template v-if="!isUser && parsedMessage.actions && parsedMessage.actions.length > 0">
+        <ChatActionCard
+          v-for="(act, idx) in parsedMessage.actions"
+          :key="idx"
+          :action="act"
+        />
+      </template>
+
+      <!-- Typing Indicator In-Place (HANYA saat pesan AI masih kosong sebelum teks chunk pertama tiba) -->
       <div
-        v-else-if="!isUser"
+        v-if="!isUser && !parsedMessage.cleanText"
         class="flex items-center gap-1.5 py-1 px-0.5"
       >
         <span class="w-2 h-2 rounded-full bg-orange-500 animate-bounce" style="animation-delay: 0ms;" />

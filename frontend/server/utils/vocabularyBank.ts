@@ -91,14 +91,15 @@ export function analyzeUserEmotion(text = '', currentUiMood = 'Balanced'): Emoti
     }
   }
 
-  // Cek apakah pesan murni sapaan pendek
+  // Cek apakah pesan murni sapaan pendek (maks 5 kata tanpa muatan emosi lain)
   const isGreetingOnly =
     (scores.greeting || 0) > 0 &&
-    (normalizedWords.length <= 3 ||
-      ((scores.overwhelmed || 0) === 0 &&
-        (scores.tired || 0) === 0 &&
-        (scores.distracted || 0) === 0 &&
-        (scores.energetic || 0) === 0))
+    normalizedWords.length <= 5 &&
+    (scores.overwhelmed || 0) === 0 &&
+    (scores.tired || 0) === 0 &&
+    (scores.distracted || 0) === 0 &&
+    (scores.energetic || 0) === 0 &&
+    (scores.balanced || 0) === 0
 
   if (isGreetingOnly) {
     return {

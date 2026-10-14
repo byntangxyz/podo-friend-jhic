@@ -3,6 +3,7 @@ import { useChatStore } from '~/stores/chat'
 import { useSurveyStore } from '~/stores/survey'
 import { usePreferencesStore } from '~/stores/preferences'
 import { useAiChat } from '~/composables/useAiChat'
+import { useTaskStore } from '~/stores/task'
 import ChatSidebar from '~/components/chat/ChatSidebar.vue'
 import ChatBubble from '~/components/chat/ChatBubble.vue'
 import ChatTypingIndicator from '~/components/chat/ChatTypingIndicator.vue'
@@ -21,6 +22,7 @@ useHead({
 const chatStore = useChatStore()
 const surveyStore = useSurveyStore()
 const preferencesStore = usePreferencesStore()
+const taskStore = useTaskStore()
 const { sendMessage } = useAiChat()
 
 const isMobileSidebarOpen = ref(false)
@@ -51,11 +53,16 @@ onMounted(async () => {
     chatStore.fetchSessions(),
     surveyStore.fetchTodaySurvey(),
     preferencesStore.fetchPreferences(),
+    taskStore.fetchTasks(),
   ])
 
   // Jika ada sesi yang sedang aktif, muat pesannya
   if (chatStore.activeSessionId) {
     await chatStore.fetchMessages(chatStore.activeSessionId)
+  } else if (chatStore.sessions.length > 0) {
+    await chatStore.fetchMessages(chatStore.sessions[0]!.id)
+  } else {
+    await chatStore.createSession()
   }
   scrollToBottom()
 })

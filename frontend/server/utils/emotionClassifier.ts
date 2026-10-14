@@ -76,7 +76,7 @@ export async function classifyEmotionWithLLM(
   currentUiMood: string,
   options: ClassifierOptions = {},
 ): Promise<EmotionAnalysisResult | null> {
-  const { timeoutMs = 5000, minConfidence = 0.55 } = options
+  const { timeoutMs = 3000, minConfidence = 0.55 } = options
 
   try {
     const response = await model.invoke(

@@ -100,7 +100,20 @@ export const useChatStore = defineStore('chat', {
      */
     async createSession(title?: string): Promise<string | number | null> {
       const authStore = useAuthStore()
-      if (!authStore.isAuthenticated) return null
+      if (!authStore.isAuthenticated) {
+        const fallbackId = `local-${Date.now()}`
+        const fallbackSession: ChatSession = {
+          id: fallbackId,
+          title: title || 'Obrolan Baru',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          messages_count: 0,
+        }
+        this.sessions.unshift(fallbackSession)
+        this.activeSessionId = fallbackId
+        this.messages = []
+        return fallbackId
+      }
 
       this.error = null
       try {

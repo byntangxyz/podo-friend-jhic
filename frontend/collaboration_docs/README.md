@@ -3,6 +3,7 @@
 Direktori ini berisi dokumentasi teknis dan panduan serah terima (*handover*) proyek untuk tim pengembang yang melanjutkan pengembangan frontend PodoFriend.
 
 ## Berkas Dokumentasi:
+- 🤖 [LANGCHAIN_CHATBOT_AI_ENHANCEMENT_REPORT.md](./LANGCHAIN_CHATBOT_AI_ENHANCEMENT_REPORT.md): Laporan lengkap implementasi LangChain Chatbot AI, ekspansi Vocabulary Bank 2.500 keywords, dual action calling (CREATE_TASK & SET_STUDY_MODE), investigasi kestabilan gateway 9Router, dan migrasi database tabel tasks.
 - 📘 [FRONTEND_HANDOVER_DOCUMENTATION.md](./FRONTEND_HANDOVER_DOCUMENTATION.md): Dokumentasi lengkap mencakup arsitektur, konfigurasi lingkungan `.env`, seluruh fitur Phase 1–3, arsitektur multi-sesi, Nitro Server Streaming, integrasi Vocabulary Bank, dan panduan pengujian.
 - 🎨 [MASCOT_ANIMATION_PLAN_V1.md](./MASCOT_ANIMATION_PLAN_V1.md): Rencana dan spesifikasi awal sistem animasi dinamis Podo mascot V1.
 - 🚀 [MASCOT_ANIMATION_PLAN_V2.md](./MASCOT_ANIMATION_PLAN_V2.md): Dokumentasi sistem animasi maskot terpadu V2 (transisi morph halus, state machine chat & timer, aturan 2-maskot chatbot).

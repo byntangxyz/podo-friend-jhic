@@ -2,12 +2,16 @@ import { useAuthStore } from '~/stores/auth'
 import { useSurveyStore } from '~/stores/survey'
 import { usePreferencesStore } from '~/stores/preferences'
 import { useChatStore } from '~/stores/chat'
+import { useTimerStore } from '~/stores/timer'
+import { useTaskStore } from '~/stores/task'
 
 export function useAiChat() {
   const authStore = useAuthStore()
   const surveyStore = useSurveyStore()
   const preferencesStore = usePreferencesStore()
   const chatStore = useChatStore()
+  const timerStore = useTimerStore()
+  const taskStore = useTaskStore()
 
   /**
    * Alur Pengiriman Pesan Streaming (Nuxt 4 Nitro Server & Vocabulary Bank):
@@ -23,17 +27,20 @@ export function useAiChat() {
     const trimmed = userText.trim()
     if (!trimmed || chatStore.isLoading) return
 
-    // 1. Cek Sesi
+    // 1. Cek Sesi: Pastikan activeSessionId selalu terisi
     if (!chatStore.activeSessionId) {
       const newSessionId = await chatStore.createSession()
-      if (!newSessionId) {
-        console.warn('Could not establish active session ID, continuing with local session')
+      if (!newSessionId && !chatStore.activeSessionId) {
+        chatStore.activeSessionId = `local-${Date.now()}`
       }
     }
 
-    // 2. Simpan User: Tampilkan langsung di UI dan simpan ke backend Laravel
+    // 2. Simpan User: Tampilkan langsung di UI secara instan
     chatStore.addUserMessage(trimmed)
-    await chatStore.saveMessage('user', trimmed)
+    // Sinkronisasi ke backend Laravel secara asinkron tanpa memblokir stream AI
+    chatStore.saveMessage('user', trimmed).catch((err) => {
+      console.warn('[useAiChat] Background sync user message failed:', err)
+    })
 
     // 3. Loading & Objek Pesan AI Kosong
     chatStore.setLoading(true)
@@ -49,6 +56,11 @@ export function useAiChat() {
           message: m.message,
         }))
 
+      const pendingTaskTitles = taskStore.tasks
+        .filter((t) => !t.is_completed)
+        .map((t) => t.title.trim())
+        .filter(Boolean)
+
       const payload = {
         messages: messagesHistory,
         todayMood: surveyStore.todaySurvey?.mood || null,
@@ -57,6 +69,16 @@ export function useAiChat() {
           preferencesStore.activePersonality ||
           'Empatik & Mendukung',
         userName: authStore.user?.name || 'Kawan',
+        studyMode: timerStore.studyMode || 'normal',
+        activeTask:
+          timerStore.activeTask && timerStore.activeTask !== 'Fokus Mandiri'
+            ? timerStore.activeTask
+            : null,
+        userTasks: pendingTaskTitles.length > 0 ? pendingTaskTitles.slice(0, 8) : null,
+        taskSummary:
+          taskStore.tasks.length > 0
+            ? `${taskStore.pendingCount} tugas belum selesai, ${taskStore.completedCount} selesai`
+            : null,
       }
 
       // 4. Request ke Nuxt 4 Nitro Server Route (/api/ai/chat)
