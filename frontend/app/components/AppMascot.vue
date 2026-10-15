@@ -6,6 +6,7 @@ import { moteSvg as listeningSvg } from '~~/.agent/docs/Animation/moteListening.
 import { moteSvg as searchingSvg } from '~~/.agent/docs/Animation/moteSearching.js'
 import { moteSvg as sleepySvg } from '~~/.agent/docs/Animation/moteSleepy.js'
 import { moteSvg as thinkingSvg } from '~~/.agent/docs/Animation/moteThinking.js'
+import { moteSvg as dizzySvg } from '~~/.agent/docs/Animation/moteDizzy.js'
 
 interface Props {
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'custom'
@@ -42,6 +43,7 @@ const svgMap: Record<MascotAnimationState, string> = {
   excited: excitedSvg,
   sleepy: sleepySvg,
   searching: searchingSvg,
+  dizzy: dizzySvg,
 }
 
 const currentSvg = computed(() => {

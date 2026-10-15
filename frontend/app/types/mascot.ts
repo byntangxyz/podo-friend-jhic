@@ -5,3 +5,4 @@ export type MascotAnimationState =
   | 'excited'
   | 'sleepy'
   | 'searching'
+  | 'dizzy'

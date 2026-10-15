@@ -119,19 +119,52 @@ export function useAiChat() {
       // 6. Sinkronisasi respons AI final ke backend Laravel
       if (fullAiText.trim()) {
         await chatStore.saveMessage('ai', fullAiText)
-        // Selebrasi sejenak setelah respons AI berhasil disajikan
-        chatStore.setMascotState('excited')
+
+        // Tentukan animasi maskot berdasarkan konteks percakapan
+        const contextText = `${trimmed} ${fullAiText}`.toLowerCase()
+        if (
+          contextText.includes('burnout') ||
+          contextText.includes('pusing') ||
+          contextText.includes('stres') ||
+          contextText.includes('kewalahan') ||
+          contextText.includes('pening')
+        ) {
+          chatStore.setMascotState('dizzy')
+        } else if (
+          contextText.includes('lelah') ||
+          contextText.includes('ngantuk') ||
+          contextText.includes('capek') ||
+          contextText.includes('tidur') ||
+          contextText.includes('begadang') ||
+          contextText.includes('istirahat') ||
+          contextText.includes('rehat')
+        ) {
+          chatStore.setMascotState('sleepy')
+        } else if (
+          contextText.includes('selesai') ||
+          contextText.includes('hebat') ||
+          contextText.includes('semangat') ||
+          contextText.includes('keren') ||
+          contextText.includes('berhasil') ||
+          contextText.includes('luar biasa')
+        ) {
+          chatStore.setMascotState('excited')
+        } else {
+          chatStore.setMascotState('excited')
+        }
+
         setTimeout(() => {
-          if (chatStore.mascotState === 'excited') {
-            chatStore.setMascotState('idle')
-          }
-        }, 3500)
+          chatStore.setMascotState('idle')
+        }, 4000)
       } else {
         chatStore.setMascotState('idle')
       }
     } catch (err: any) {
       console.error('[AI Chat Error]:', err)
-      chatStore.setMascotState('idle')
+      chatStore.setMascotState('dizzy') // Podo pusing karena koneksi bermasalah
+      setTimeout(() => {
+        chatStore.setMascotState('idle')
+      }, 4000)
 
       // 1. Definisikan pesan error
       const fallbackError =

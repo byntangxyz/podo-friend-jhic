@@ -99,6 +99,38 @@ const latestAiMessageId = computed(() => {
   }
   return null
 })
+
+import type { MascotAnimationState } from '~/types/mascot'
+
+const greetingAnimations: MascotAnimationState[] = ['excited', 'idle', 'thinking', 'sleepy', 'dizzy', 'listening']
+const greetingAnimIndex = ref<number | null>(null)
+
+const currentGreetingAnimation = computed<MascotAnimationState>(() => {
+  if (greetingAnimIndex.value !== null) {
+    return greetingAnimations[greetingAnimIndex.value] ?? 'excited'
+  }
+  if (chatStore.mascotState !== 'idle') {
+    return chatStore.mascotState
+  }
+  const mood = surveyStore.todaySurvey?.mood?.toLowerCase() || ''
+  if (mood.includes('lelah') || mood.includes('ngantuk') || mood.includes('capek')) {
+    return 'sleepy'
+  }
+  if (mood.includes('stres') || mood.includes('burnout') || mood.includes('pusing') || mood.includes('kewalahan')) {
+    return 'dizzy'
+  }
+  if (mood.includes('senang') || mood.includes('semangat') || mood.includes('gembira')) {
+    return 'excited'
+  }
+  return 'excited'
+})
+
+const cycleGreetingAnimation = () => {
+  if (greetingAnimIndex.value === null) {
+    greetingAnimIndex.value = 0
+  }
+  greetingAnimIndex.value = (greetingAnimIndex.value + 1) % greetingAnimations.length
+}
 </script>
 
 <template>
@@ -156,12 +188,14 @@ const latestAiMessageId = computed(() => {
             <span>Kembali</span>
           </NuxtLink>
 
-          <!-- Sesi Aktif Title Badge -->
+          <!-- Sesi Aktif Title Badge with Living Mini Mascot -->
           <div
             v-if="chatStore.activeSession"
-            class="hidden md:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-50 border border-orange-200 text-xs font-bold text-stone-700"
+            class="hidden md:flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-orange-50 border border-orange-200 text-xs font-bold text-stone-700"
           >
-            <Icon name="lucide:message-square" class="w-3.5 h-3.5 text-orange-500" />
+            <div class="w-5 h-5 flex items-center justify-center shrink-0">
+              <AppMascot size="custom" custom-class="w-5 h-5" :animation="chatStore.mascotState" />
+            </div>
             <span class="truncate max-w-[200px]">{{ chatStore.activeSession.title || 'Sesi Obrolan' }}</span>
           </div>
         </div>
@@ -270,17 +304,15 @@ const latestAiMessageId = computed(() => {
           v-else-if="!chatStore.hasMessages"
           class="max-w-2xl mx-auto py-10 flex flex-col items-center text-center space-y-6"
         >
-          <!-- Mascot Greeting Frame -->
-          <div class="w-24 h-24 flex items-center justify-center p-2 rounded-3xl bg-orange-100 border-2 border-orange-300 shadow-sm animate-bounce-short">
+          <!-- Mascot Greeting Frame with Interactive Mood Animations -->
+          <div
+            class="w-24 h-24 flex items-center justify-center p-2 rounded-3xl animate-bounce-short cursor-pointer hover:scale-105 active:scale-95 transition-all select-none group relative"
+            :title="`Animasi Podo: ${currentGreetingAnimation} (Klik untuk coba animasi lain!)`"
+            @click="cycleGreetingAnimation"
+          >
             <AppMascot
               size="md"
-              :animation="
-                chatStore.mascotState === 'thinking'
-                  ? 'thinking'
-                  : chatStore.mascotState === 'listening'
-                  ? 'listening'
-                  : 'excited'
-              "
+              :animation="currentGreetingAnimation"
             />
           </div>
 

@@ -2,11 +2,57 @@
 import type { MascotAnimationState } from '~/types/mascot'
 import { unlockAudio } from '~/stores/timer'
 
+interface Props {
+  peekingMascot?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  peekingMascot: false,
+})
+
 const timerStore = useTimerStore()
 const authStore = useAuthStore()
 
+// State Peeking Mascot di Atas Timer (Landing Page)
+const eyeShiftX = ref(0)
+const eyeShiftY = ref(0)
+const peekingMascotRef = ref<HTMLElement | null>(null)
+const isMascotJumping = ref(false)
+
+function handleMascotClick() {
+  if (isMascotJumping.value) return
+  isMascotJumping.value = true
+  setTimeout(() => {
+    navigateTo('/signup')
+  }, 350)
+}
+
+function handleMouseMove(e: MouseEvent) {
+  if (!props.peekingMascot || !peekingMascotRef.value) return
+
+  const rect = peekingMascotRef.value.getBoundingClientRect()
+  const eyeCenterX = rect.left + rect.width / 2
+  const eyeCenterY = rect.top + rect.height * 0.42
+
+  const dx = e.clientX - eyeCenterX
+  const dy = e.clientY - eyeCenterY
+  const dist = Math.hypot(dx, dy)
+
+  const maxShiftX = 14
+  const maxShiftY = 10
+
+  if (dist > 0) {
+    const factor = Math.min(dist / 260, 1)
+    eyeShiftX.value = (dx / dist) * maxShiftX * factor
+    eyeShiftY.value = (dy / dist) * maxShiftY * factor
+  }
+}
+
 onMounted(() => {
   unlockAudio()
+  if (props.peekingMascot) {
+    window.addEventListener('mousemove', handleMouseMove, { passive: true })
+  }
 })
 
 // Dialog kata-kata Podo yang ramah, alami, dan responsif terhadap status istirahat wajib
@@ -157,6 +203,7 @@ watch(
 
 onUnmounted(() => {
   closeFloating()
+  window.removeEventListener('mousemove', handleMouseMove)
 })
 </script>
 
@@ -189,11 +236,76 @@ onUnmounted(() => {
     </div>
 
     <!-- Host Container untuk Card Pomodoro Timer -->
-    <div ref="cardHostRef" class="w-full flex justify-center">
+    <div
+      ref="cardHostRef"
+      class="w-full flex justify-center relative"
+      :class="{ 'pt-20 sm:pt-24': peekingMascot && !isFloatingActive }"
+    >
+      <!-- Peeking Mascot on top of PomodoroTimer (behind card, hidden when floating) -->
+      <div
+        v-if="peekingMascot && !isFloatingActive"
+        ref="peekingMascotRef"
+        class="mascot-position-wrapper absolute -top-[86px] sm:-top-[116px] left-1/2 -translate-x-1/2 z-0 cursor-pointer select-none"
+        title="Klik Podo untuk daftar akun!"
+        @click="handleMascotClick"
+      >
+        <div
+          class="mascot-peeking-bob w-64 sm:w-80 h-56 sm:h-72 flex flex-col items-center justify-start group"
+          :class="{ 'is-jumping': isMascotJumping }"
+        >
+        <!-- Floating Cute Invitation Tooltip on Hover -->
+        <div
+          class="absolute -top-7 opacity-0 group-hover:opacity-100 transition-all duration-300 transform -translate-y-1 group-hover:translate-y-0 pointer-events-none z-30"
+        >
+          <div class="bg-stone-900 text-white text-[11px] font-black px-3 py-1 rounded-full shadow-lg border border-orange-400 flex items-center gap-1.5 whitespace-nowrap">
+            <span class="w-2 h-2 rounded-full bg-orange-500 animate-ping" />
+            <span>Klik aku buat daftar!</span>
+          </div>
+        </div>
+
+        <!-- SVG Mascot with ClipPath, Cursor-tracking Eyes & Blink -->
+        <svg
+          viewBox="0 0 320 230"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          class="w-full h-full overflow-visible drop-shadow-sm filter transition-transform duration-200 group-hover:scale-105"
+        >
+          <defs>
+            <clipPath id="landing-podo-body-clip">
+              <path
+                d="M 160 54 C 166.69 54.06 173.65 54.6 180.06 56.15 C 186.47 57.69 192.63 60.21 198.45 63.27 C 204.27 66.33 210.15 70 214.99 74.52 C 219.83 79.03 222.46 86.11 227.49 90.35 C 232.51 94.59 240.49 95.62 245.14 99.98 C 249.78 104.33 253.11 110.54 255.37 116.47 C 257.63 122.41 258.76 129.1 258.68 135.57 C 258.61 142.04 256.76 148.96 254.91 155.3 C 253.06 161.63 247.63 167.39 247.59 173.58 C 247.55 179.78 254.37 186.23 254.68 192.47 C 254.99 198.72 252.45 205.5 249.46 211.04 C 246.46 216.59 241.69 221.74 236.7 225.76 C 231.71 229.78 225.75 233.47 219.53 235.17 C 213.31 236.86 205.85 234.59 199.37 235.91 C 192.9 237.23 187.02 241.78 180.68 243.1 C 174.33 244.41 167.83 244.31 161.3 243.81 C 154.76 243.31 148.04 241.55 141.47 240.12 C 134.91 238.69 128.52 235.96 121.9 235.23 C 115.28 234.49 108.06 236.84 101.77 235.71 C 95.47 234.59 89.33 232.05 84.14 228.48 C 78.95 224.92 74.13 219.77 70.63 214.3 C 67.12 208.83 63.44 202.01 63.09 195.67 C 62.74 189.32 68.28 182.64 68.53 176.24 C 68.79 169.84 65.52 163.65 64.63 157.28 C 63.75 150.91 62.49 144.39 63.21 138.04 C 63.94 131.68 65.58 124.59 68.98 119.13 C 72.38 113.66 79.69 110.53 83.62 105.25 C 87.56 99.97 89.14 92.98 92.58 87.44 C 96.03 81.89 99.56 76.47 104.28 71.98 C 108.99 67.5 114.95 63.23 120.88 60.53 C 126.82 57.83 133.39 56.86 139.9 55.77 C 146.42 54.69 153.31 53.94 160 54 Z"
+              />
+            </clipPath>
+          </defs>
+
+          <!-- Mascot Orange Body -->
+          <path
+            d="M 160 54 C 166.69 54.06 173.65 54.6 180.06 56.15 C 186.47 57.69 192.63 60.21 198.45 63.27 C 204.27 66.33 210.15 70 214.99 74.52 C 219.83 79.03 222.46 86.11 227.49 90.35 C 232.51 94.59 240.49 95.62 245.14 99.98 C 249.78 104.33 253.11 110.54 255.37 116.47 C 257.63 122.41 258.76 129.1 258.68 135.57 C 258.61 142.04 256.76 148.96 254.91 155.3 C 253.06 161.63 247.63 167.39 247.59 173.58 C 247.55 179.78 254.37 186.23 254.68 192.47 C 254.99 198.72 252.45 205.5 249.46 211.04 C 246.46 216.59 241.69 221.74 236.7 225.76 C 231.71 229.78 225.75 233.47 219.53 235.17 C 213.31 236.86 205.85 234.59 199.37 235.91 C 192.9 237.23 187.02 241.78 180.68 243.1 C 174.33 244.41 167.83 244.31 161.3 243.81 C 154.76 243.31 148.04 241.55 141.47 240.12 C 134.91 238.69 128.52 235.96 121.9 235.23 C 115.28 234.49 108.06 236.84 101.77 235.71 C 95.47 234.59 89.33 232.05 84.14 228.48 C 78.95 224.92 74.13 219.77 70.63 214.3 C 67.12 208.83 63.44 202.01 63.09 195.67 C 62.74 189.32 68.28 182.64 68.53 176.24 C 68.79 169.84 65.52 163.65 64.63 157.28 C 63.75 150.91 62.49 144.39 63.21 138.04 C 63.94 131.68 65.58 124.59 68.98 119.13 C 72.38 113.66 79.69 110.53 83.62 105.25 C 87.56 99.97 89.14 92.98 92.58 87.44 C 96.03 81.89 99.56 76.47 104.28 71.98 C 108.99 67.5 114.95 63.23 120.88 60.53 C 126.82 57.83 133.39 56.86 139.9 55.77 C 146.42 54.69 153.31 53.94 160 54 Z"
+            fill="#F56A16"
+          />
+
+          <!-- Eyes Group with Eye Tracking and Blink -->
+          <g clip-path="url(#landing-podo-body-clip)">
+            <g
+              class="podo-eyes-tracker"
+              :style="{
+                transform: `translate3d(${eyeShiftX}px, ${eyeShiftY}px, 0)`,
+              }"
+            >
+              <g class="podo-eyes-blink origin-[160px_145px]">
+                <rect x="129" y="114" width="24" height="56" rx="12" fill="#151612" />
+                <rect x="167" y="114" width="24" height="56" rx="12" fill="#151612" />
+              </g>
+            </g>
+          </g>
+        </svg>
+        </div>
+      </div>
+
       <!-- Main Pomodoro Card (Card yang di-float secara utuh) -->
       <div
         ref="cardRef"
-        class="w-full flex flex-col items-center justify-center bg-white rounded-3xl border-2 border-orange-400 p-5 sm:p-7 shadow-lg relative overflow-hidden transition-all duration-300"
+        class="w-full flex flex-col items-center justify-center bg-white rounded-3xl border-2 border-orange-400 p-5 sm:p-7 shadow-lg relative z-10 overflow-hidden transition-all duration-300"
         :class="[
           isFloatingActive && !isNativePip
             ? 'fixed bottom-6 right-6 z-50 w-[420px] max-w-[calc(100vw-2rem)] shadow-2xl border-orange-500 bg-white'
@@ -217,7 +329,7 @@ onUnmounted(() => {
           class="w-4 h-4"
           :class="isFloatingActive ? 'text-white' : 'text-orange-500'"
         />
-        <span class="hidden sm:inline">{{ isFloatingActive ? 'Tutup PiP' : 'Floating Timer' }}</span>
+        <!-- <span class="hidden sm:inline">{{ isFloatingActive ? 'Tutup PiP' : 'Floating Timer' }}</span> -->
       </button>
 
       <!-- Mode Switcher (Work vs Break) -->
@@ -461,3 +573,54 @@ onUnmounted(() => {
     </Transition>
   </div>
 </template>
+
+<style scoped>
+/* Animasi Peeking Mascot di Atas Timer (Landing Page) */
+.mascot-peeking-bob {
+  animation: mascot-peek-loop 3.8s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+@keyframes mascot-peek-loop {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.mascot-peeking-bob.is-jumping {
+  animation: mascot-jump-out 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes mascot-jump-out {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  40% {
+    transform: translateY(-28px) scale(1.12);
+  }
+  100% {
+    transform: translateY(-14px) scale(1.05);
+  }
+}
+
+.podo-eyes-tracker {
+  transition: transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform;
+}
+
+.podo-eyes-blink {
+  animation: podo-eye-blink 5.2s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+}
+
+@keyframes podo-eye-blink {
+  0%, 45%, 49%, 100% {
+    transform: scaleY(1);
+  }
+  47% {
+    transform: scaleY(0.08);
+  }
+}
+</style>

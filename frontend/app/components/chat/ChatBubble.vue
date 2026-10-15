@@ -31,13 +31,51 @@ const formattedTime = computed(() => {
 
 const isUser = computed(() => props.message.sender === 'user')
 
-const aiAvatarAnimation = computed(() => {
-  if (!props.message.message || chatStore.isLoading) {
+import type { MascotAnimationState } from '~/types/mascot'
+
+const aiAvatarAnimation = computed<MascotAnimationState>(() => {
+  if (!props.message.message || (props.isLatestAi && chatStore.isLoading)) {
     return 'thinking'
   }
-  if (chatStore.mascotState === 'excited') {
+
+  // Jika ini pesan AI paling akhir dan store memiliki state animasi spesifik selain idle
+  if (props.isLatestAi && chatStore.mascotState !== 'idle') {
+    return chatStore.mascotState
+  }
+
+  // Deteksi emosi kontekstual dari teks pesan
+  const text = (props.message.message || '').toLowerCase()
+  if (
+    text.includes('burnout') ||
+    text.includes('pusing') ||
+    text.includes('stres') ||
+    text.includes('kewalahan') ||
+    text.includes('pening') ||
+    text.includes('gangguan koneksi')
+  ) {
+    return 'dizzy'
+  }
+  if (
+    text.includes('lelah') ||
+    text.includes('ngantuk') ||
+    text.includes('tidur') ||
+    text.includes('begadang') ||
+    text.includes('capek') ||
+    text.includes('rehat sejenak')
+  ) {
+    return 'sleepy'
+  }
+  if (
+    text.includes('hebat') ||
+    text.includes('keren') ||
+    text.includes('selamat') ||
+    text.includes('berhasil') ||
+    text.includes('luar biasa') ||
+    text.includes('semangat')
+  ) {
     return 'excited'
   }
+
   return 'idle'
 })
 </script>
