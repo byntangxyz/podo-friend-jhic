@@ -2,6 +2,10 @@
 import { z } from 'zod'
 import type { AuthResponse, ApiErrorResponse } from '~/types/auth'
 
+definePageMeta({
+  alias: ['/signup'],
+})
+
 useHead({
   title: 'Daftar Akun Baru',
 })

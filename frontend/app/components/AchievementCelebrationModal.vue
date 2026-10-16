@@ -67,18 +67,10 @@ onUnmounted(() => {
             <div class="w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center">
               <AppMascot size="lg" animation="excited" />
             </div>
-            <!-- Sparkle Accents -->
-            <div class="absolute -top-1 -right-2 text-amber-500 animate-bounce">
-              <Icon name="lucide:sparkles" class="w-6 h-6 fill-amber-400" />
-            </div>
-            <div class="absolute bottom-2 -left-2 text-orange-500 animate-pulse">
-              <Icon name="lucide:flame" class="w-5 h-5 fill-orange-400" />
-            </div>
           </div>
 
           <!-- Header Titles -->
-          <div class="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-orange-100 text-orange-700 text-xs font-black uppercase tracking-wider mb-2 border border-orange-300">
-            <Icon name="lucide:award" class="w-4 h-4" />
+          <div class="inline-flex items-center gap-2 px-4 py-1 text-orange-700 text-xs font-black uppercase tracking-wider mb-2">
             <span>Pencapaian Baru Terbuka!</span>
           </div>
 

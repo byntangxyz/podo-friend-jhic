@@ -37,6 +37,7 @@ Berdasarkan evaluasi terhadap pengujian awal, terdapat dua kebutuhan penyempurna
 | **`excited`** | `Animation/moteExcited.js` | Mata membesar bulat, melenting ceria | Selesai generate pesan AI, sesi Pomodoro tuntas |
 | **`sleepy`** | `Animation/moteSleepy.js` | Kelopak mata sayu mengantuk, gerakan rileks | Sesi istirahat (*Break*), mood *Tired/Overwhelmed* |
 | **`searching`** | `Animation/moteSearching.js` | Mata melirik cepat ke kiri dan kanan | Pencarian riwayat chat aktif di sidebar |
+| **`dizzy`** | `Animation/moteDizzy.js` | Mata sayu/merem kelelahan, spiral berputar halus di atas kepala, goyangan pusing/overwhelmed | Kondisi lelah/pusing/kewalahan, deteksi burnout atau survei overwhelmed |
 
 ---
 

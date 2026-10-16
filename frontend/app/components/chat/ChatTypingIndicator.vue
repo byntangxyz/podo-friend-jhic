@@ -1,10 +1,17 @@
+<script setup lang="ts">
+const chatStore = useChatStore()
+const typingAnimation = computed(() => {
+  return chatStore.mascotState === 'searching' ? 'searching' : 'thinking'
+})
+</script>
+
 <template>
   <div class="flex w-full mb-4 items-end gap-2.5 justify-start transition-all">
     <!-- Avatar Mascot for AI -->
     <div
-      class="w-10 h-10 flex-shrink-0 flex items-center justify-center p-1 rounded-2xl bg-orange-100 border border-orange-200 select-none shadow-sm"
+      class="w-16 h-16 flex-shrink-0 flex items-center justify-center p-1 select-none transition-all"
     >
-      <AppMascot size="sm" animation="thinking" />
+      <AppMascot size="custom" custom-class="w-16 h-16 sm:w-16 sm:h-16" :animation="typingAnimation" />
     </div>
 
     <!-- Typing Bubble -->

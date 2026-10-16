@@ -11,5 +11,6 @@ Direktori ini berisi dokumentasi teknis dan panduan serah terima (*handover*) pr
 - ⚡ [DAILY_SURVEY_STEP2_AND_TIMER_RULES_PLAN.md](./DAILY_SURVEY_STEP2_AND_TIMER_RULES_PLAN.md): Rencana implementasi Survey Step 2 (Mode Belajar Cepat/Normal/Lambat dari aset SVG), widget Preferensi Belajar dashboard, audio alarm timer habis, dan aturan wajib break setelah sesi fokus.
 - 🦊 [MASCOT_SIDEBAR_AND_UI_ENHANCEMENT_PLAN.md](./MASCOT_SIDEBAR_AND_UI_ENHANCEMENT_PLAN.md): Rencana implementasi maskot animasi reaktif sidebar (pengganti `pomodoro_right_bar.svg`), pembaruan ikon api `FireStreak.svg` pada gamifikasi stats, dan standardisasi font Plus Jakarta Sans.
 - ✨ [MEMORABLE_LANDING_PAGE_PLAN.md](./MEMORABLE_LANDING_PAGE_PLAN.md): Proposal arsitektur dan konsep desain Landing Page interaktif, berkesan (*memorable*), dengan Living Interactive Mascot, Bento Grid fitur modern, dan AI Simulator Playground.
+- ⏱️ [ENHANCE_LANDING_PAGE_AND_UI_PLAN.md](./ENHANCE_LANDING_PAGE_AND_UI_PLAN.md): Rencana dan implementasi Landing Page Hero Timer dengan maskot peeking up-down, eye cursor tracking, tombol bergaya sketsa referensi, dan direct redirect ke `/signup`.
 
 
